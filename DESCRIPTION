@@ -1,0 +1,19 @@
+Package: NAATools
+Type: Package
+Title: NA-Accord Tools
+Version: 0.1.0
+Author: Erik Westlund
+Maintainer: Erik Westlund <ewestlund@jhu.edu>
+Description: This package provides tools to pull down, clean, and analyze data 
+  from the NA-Accord Depot.
+License: Proprietary
+Encoding: UTF-8
+LazyData: true
+Imports:
+  DBI,
+  dplyr,
+  ggplot2,
+  readr,
+  RMariaDB,
+  tidyr
+RoxygenNote: 7.3.2
