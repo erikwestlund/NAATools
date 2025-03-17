@@ -14,6 +14,6 @@ A tibble containing all rows from the input files, with an additional `source_fi
         indicating the origin of each row.
 }
 \description{
-Reads multiple CSV files using `readr::read_csv()`, combines them using `dplyr::bind_rows()`,
-and returns a single data frame.
+Reads multiple CSV files using `readr::read_csv()`, ensuring that column types
+default to character in case of type mismatches, and combines them using `dplyr::bind_rows()`.
 }
