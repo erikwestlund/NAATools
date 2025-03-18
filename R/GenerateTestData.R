@@ -11,19 +11,21 @@
 #'   the value is a vector of predefined values that will be recycled or sampled.
 #'
 #' @return A data frame with `n` rows based on the frequency table.
-#' @importFrom dplyr sample_n select mutate
+#' @importFrom dplyr select
 #' @export
 #'
 #' @examples
 #' freq_table <- data.frame(
 #'   category = c("A", "B", "C"),
 #'   type = c("X", "Y", "X"),
-#'   group = c(1, 2, 1)
+#'   group = c(1, 2, 1),
+#'   category_n = c(10, 20, 30),  # These should be removed
+#'   category_pct = c(20, 40, 40) # These should be removed
 #' )
 #'
 #' test_data <- generateTestData(freq_table, n = 100, extraCols = list(
 #'   name = c("Alice", "Bob", "Charlie"),
-#'   age = c(25, 30, 35)
+#'   patientId = c() # Will be blank
 #' ))
 #' print(test_data)
 generateTestData <- function(freq_table, n = NA, extraCols = list()) {
@@ -32,6 +34,9 @@ generateTestData <- function(freq_table, n = NA, extraCols = list()) {
     is.numeric(n) || is.na(n),
     is.list(extraCols)
   )
+
+  # Remove any `_n` and `_pct` columns if they exist
+  freq_table <- freq_table[, !grepl("(_n|_pct)$", colnames(freq_table)), drop = FALSE]
 
   total_rows <- nrow(freq_table)
 
@@ -43,13 +48,20 @@ generateTestData <- function(freq_table, n = NA, extraCols = list()) {
     sampled_data <- freq_table[rep(seq_len(nrow(freq_table)), length.out = n), , drop = FALSE]
   } else {
     # Case 3: `n < total_rows`, sample with proportion
-    sampled_data <- freq_table[sample(nrow(freq_table), size = n, replace = TRUE), , drop = FALSE]
+    sampled_data <- freq_table[sample(seq_len(nrow(freq_table)), size = n, replace = TRUE), , drop = FALSE]
   }
 
   # Add extra columns with predefined values
   for (col_name in names(extraCols)) {
     values <- extraCols[[col_name]]
-    sampled_data[[col_name]] <- rep(values, length.out = nrow(sampled_data))
+
+    if (length(values) == 0) {
+      # If no values provided, create blank character column
+      sampled_data[[col_name]] <- rep("", nrow(sampled_data))
+    } else {
+      # Otherwise, recycle or sample values
+      sampled_data[[col_name]] <- rep(values, length.out = nrow(sampled_data))
+    }
   }
 
   return(sampled_data)
