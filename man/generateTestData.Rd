@@ -20,14 +20,14 @@ A data frame with `n` rows based on the frequency table.
 \description{
 This function generates a synthetic dataset based on a frequency table.
 If `n = NA`, it returns one row per unique frequency combination.
-If `n >= total`, it generates data proportionally based on `_pct`.
+If `n >= total`, it generates data proportionally based on row counts.
 If `n < total`, it samples while trying to maintain proportions.
 }
 \examples{
 freq_table <- data.frame(
   category = c("A", "B", "C"),
-  category_n = c(50, 30, 20),
-  category_pct = c(50, 30, 20)
+  type = c("X", "Y", "X"),
+  group = c(1, 2, 1)
 )
 
 test_data <- generateTestData(freq_table, n = 100, extraCols = list(

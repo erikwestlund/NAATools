@@ -213,7 +213,7 @@ calculateFrequencies <- function(data, freq_cols, required_cols, col_types) {
   }
 
   # Compute frequencies efficiently using data.table
-  result <- data[, .(n = .N), by = freq_cols][, pct := round(n / .N * 100, 2)]
+  result <- data[, .(n = .N), by = freq_cols][, pct := n / .N * 100]
 
   return(result)
 }
