@@ -29,13 +29,24 @@
 generateTestData <- function(freq_table, n = NA, extraCols = list()) {
   stopifnot(is.data.frame(freq_table), is.list(extraCols))
 
-  # Ensure `n` is numeric and not invalid
-  if (is.null(n) || identical(n, "")) {
+  # Ensure `n` is properly evaluated
+  if (is.null(n) || identical(n, "") || length(n) == 0) {
     n <- NA
   }
+
+  # Convert `n` to numeric safely
   n <- suppressWarnings(as.numeric(n))
-  if (is.na(n) && !is.na(nrow(freq_table))) {
-    stop("`n` must be a numeric value or NA.")
+
+  # Debugging: Print `n` and table info
+  print(paste("n value:", n))
+  print(paste("Is numeric:", is.numeric(n)))
+  print(paste("Length of n:", length(n)))
+  print(paste("Rows in freq_table:", nrow(freq_table)))
+
+  if (is.na(n)) {
+    message("`n` is NA. Returning one row per unique frequency combination.")
+  } else if (n < 1) {
+    stop("`n` must be a positive number.")
   }
 
   # Ensure `freq_table` is not empty
@@ -43,22 +54,32 @@ generateTestData <- function(freq_table, n = NA, extraCols = list()) {
     stop("`freq_table` is empty. Cannot generate synthetic data.")
   }
 
+  # Remove `_n` and `_pct` columns if they exist
+  freq_table <- freq_table[, !grepl("(_n|_pct)$", colnames(freq_table)), drop = FALSE]
 
   total_rows <- nrow(freq_table)
-
-  print(total_rows)
-  print(n)
+  print(paste("Total unique rows available:", total_rows))  # Debugging
 
   if (is.na(n)) {
     # Case 1: `n = NA`, return one row per unique value combo
     sampled_data <- freq_table
   } else if (n >= total_rows) {
     # Case 2: `n >= total_rows`, generate proportionally
-    sampled_data <- freq_table[rep(seq_len(nrow(freq_table)), length.out = n), , drop = FALSE]
+    if (total_rows == 1) {
+      sampled_data <- freq_table[rep(1, length.out = n), , drop = FALSE]
+    } else {
+      sampled_data <- freq_table[rep(seq_len(nrow(freq_table)), length.out = n), , drop = FALSE]
+    }
   } else {
     # Case 3: `n < total_rows`, sample with proportion
-    sampled_data <- freq_table[sample(seq_len(nrow(freq_table)), size = n, replace = TRUE), , drop = FALSE]
+    if (n > 0 && n <= total_rows) {
+      sampled_data <- freq_table[sample(seq_len(nrow(freq_table)), size = n, replace = TRUE), , drop = FALSE]
+    } else {
+      stop("Invalid `n` value for sampling. Check input.")
+    }
   }
+
+  print(paste("Generated rows:", nrow(sampled_data)))  # Debugging
 
   # Add extra columns with predefined values
   for (col_name in names(extraCols)) {
@@ -72,9 +93,6 @@ generateTestData <- function(freq_table, n = NA, extraCols = list()) {
       sampled_data[[col_name]] <- rep(values, length.out = nrow(sampled_data))
     }
   }
-
-  # Remove `n` and `pct` columns if they exist
-  freq_table <- freq_table[, !grepl("(n|pct)$", colnames(freq_table)), drop = FALSE]
 
   return(sampled_data)
 }
