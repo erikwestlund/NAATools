@@ -9,27 +9,33 @@ characterizeDf(df, meta)
 \arguments{
 \item{df}{A data frame to be analyzed.}
 
-\item{meta}{A list containing metadata details such as column types, required columns, and frequency analysis columns.}
+\item{meta}{A list containing metadata details. Must include:
+- `types`: Expected column types.
+- `freq_cols`: Columns to compute frequency distributions.}
 }
 \value{
-A list with two elements:
-  \item{meta}{A list containing metadata, including row count, column types, and characterizations.}
+A list with three elements:
+  \item{meta}{A list containing metadata, including row count and column types.}
   \item{freqs}{A data frame containing unique value combinations of specified columns with frequency counts and percentages.}
+  \item{characterizations}{A list characterizing all columns, including unique counts, missing values, and validation percentages.}
 }
 \description{
 Analyzes a data frame’s metadata, column types, and frequency distributions.
 }
 \examples{
 \dontrun{
-df <- read.csv("data.csv", stringsAsFactors = FALSE)
+df <- data.frame(
+  col1 = c("123", "456", "abc", NA),
+  col2 = c("A", "B", "C", "D")
+)
 meta_info <- list(
   types = c("col1" = "numeric", "col2" = "character"),
-  required_cols = c("col1", "col3"),
-  char_cols = c("col2"),
-  freq_cols = c("col1", "col2")
+  freq_cols = c("col1", "col2"),
+  required_cols = c("col1", "col3")
 )
 result <- characterizeDf(df, meta_info)
 print(result$meta)
 print(result$freqs)
+print(result$characterizations)
 }
 }
