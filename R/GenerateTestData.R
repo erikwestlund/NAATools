@@ -43,10 +43,11 @@ generateTestData <- function(freq_table, n = NA, extraCols = list()) {
     stop("`freq_table` is empty. Cannot generate synthetic data.")
   }
 
-  # Remove `_n` and `_pct` columns if they exist
-  freq_table <- freq_table[, !grepl("(_n|_pct)$", colnames(freq_table)), drop = FALSE]
 
   total_rows <- nrow(freq_table)
+
+  print(total_rows)
+  print(n)
 
   if (is.na(n)) {
     # Case 1: `n = NA`, return one row per unique value combo
@@ -71,6 +72,9 @@ generateTestData <- function(freq_table, n = NA, extraCols = list()) {
       sampled_data[[col_name]] <- rep(values, length.out = nrow(sampled_data))
     }
   }
+
+  # Remove `n` and `pct` columns if they exist
+  freq_table <- freq_table[, !grepl("(n|pct)$", colnames(freq_table)), drop = FALSE]
 
   return(sampled_data)
 }
