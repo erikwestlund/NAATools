@@ -157,7 +157,7 @@ characterizeColumns <- function(data, cols) {
 }
 
 
-#' Calculate unique value frequencies per column with type enforcement
+#' Calculate unique value frequencies per column (Fast Version with data.table)
 #'
 #' Computes frequency counts and percentages for each unique value in the specified columns,
 #' ensuring that the columns match the specified types.
@@ -167,13 +167,11 @@ characterizeColumns <- function(data, cols) {
 #' @param required_cols A character vector of required columns that should exist in the data (missing ones are created as NA).
 #' @param col_types A named character vector specifying expected column types (e.g., `c("col1" = "numeric", "col2" = "character")`).
 #'
-#' @return A data frame where each unique value in `freq_cols` has:
+#' @return A data table where each unique value in `freq_cols` has:
 #'   - All `freq_cols` with their unique values.
 #'   - `_n` (count of occurrences in the data).
 #'   - `_pct` (percentage of occurrences in the data).
-#' @importFrom dplyr group_by summarise mutate ungroup all_of
-#' @importFrom tidyr replace_na
-#' @importFrom rlang .data
+#' @importFrom data.table setDT .N
 #' @export
 #'
 #' @examples
@@ -193,6 +191,9 @@ calculateFrequencies <- function(data, freq_cols, required_cols, col_types) {
     is.null(col_types) || is.list(col_types) || is.character(col_types)
   )
 
+  # Convert data to data.table (modifies in-place for speed)
+  data.table::setDT(data)
+
   # Ensure required columns exist
   missing_cols <- setdiff(names(col_types), colnames(data))
   for (col in missing_cols) {
@@ -211,16 +212,8 @@ calculateFrequencies <- function(data, freq_cols, required_cols, col_types) {
     }
   }
 
-  # Compute frequencies
-  total_n <- nrow(data)
-  result <- data %>%
-    dplyr::select(dplyr::all_of(freq_cols)) %>%
-    dplyr::group_by(dplyr::across(dplyr::all_of(freq_cols))) %>%
-    dplyr::summarise(
-      n = dplyr::n(),
-      pct = round(n / total_n * 100, 2),
-      .groups = "drop"
-    )
+  # Compute frequencies efficiently using data.table
+  result <- data[, .(n = .N), by = freq_cols][, pct := round(n / .N * 100, 2)]
 
   return(result)
 }

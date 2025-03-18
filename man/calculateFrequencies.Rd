@@ -2,7 +2,7 @@
 % Please edit documentation in R/SubmissionCharacterization.R
 \name{calculateFrequencies}
 \alias{calculateFrequencies}
-\title{Calculate unique value frequencies per column with type enforcement}
+\title{Calculate unique value frequencies per column (Fast Version with data.table)}
 \usage{
 calculateFrequencies(data, freq_cols, required_cols, col_types)
 }
@@ -16,7 +16,7 @@ calculateFrequencies(data, freq_cols, required_cols, col_types)
 \item{col_types}{A named character vector specifying expected column types (e.g., `c("col1" = "numeric", "col2" = "character")`).}
 }
 \value{
-A data frame where each unique value in `freq_cols` has:
+A data table where each unique value in `freq_cols` has:
   - All `freq_cols` with their unique values.
   - `_n` (count of occurrences in the data).
   - `_pct` (percentage of occurrences in the data).
