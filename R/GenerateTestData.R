@@ -5,29 +5,32 @@
 #' If `n >= total`, it generates data proportionally based on row counts.
 #' If `n < total`, it samples while trying to maintain proportions.
 #'
-#' @param freq_table A data frame containing the frequency table.
+#' @param freq_table A data frame or data.table containing the frequency table.
 #' @param n The number of rows to generate (if NA, generates 1 row per unique frequency combo).
 #' @param extraCols A named list where each key is a column name to add and
 #'   the value is a vector of predefined values that will be recycled or sampled.
 #'
 #' @return A data frame with `n` rows based on the frequency table.
-#' @importFrom dplyr select
+#' @importFrom data.table as.data.table setDT
 #' @export
 #'
 #' @examples
-#' freq_table <- data.frame(
+#' library(data.table)
+#' freq_table <- data.table(
 #'   category = c("A", "B", "C"),
 #'   type = c("X", "Y", "X"),
 #'   group = c(1, 2, 1)
 #' )
 #'
-#' test_data <- generateTestData(freq_table, n = 100, extraCols = list(
-#'   name = c("Alice", "Bob", "Charlie"),
-#'   patientId = c() # Will be blank
-#' ))
+#' test_data <- generateTestData(freq_table, n = 100)
 #' print(test_data)
 generateTestData <- function(freq_table, n = NA, extraCols = list()) {
-  stopifnot(is.data.frame(freq_table), is.list(extraCols))
+  stopifnot(is.data.frame(freq_table) || is.data.table(freq_table), is.list(extraCols))
+
+  # Ensure `freq_table` is a data.table (if it's a dataframe, convert it)
+  if (!is.data.table(freq_table)) {
+    setDT(freq_table)
+  }
 
   # Ensure `n` is properly evaluated
   if (is.null(n) || identical(n, "") || length(n) == 0) {
@@ -54,7 +57,9 @@ generateTestData <- function(freq_table, n = NA, extraCols = list()) {
     stop("`freq_table` is empty. Cannot generate synthetic data.")
   }
 
-  # Remove `_n` and `_pct` columns if they exist
+  # Convert `data.table` to `data.frame` for safe operations
+  freq_table <- as.data.frame(freq_table)
+
   total_rows <- nrow(freq_table)
   print(paste("Total unique rows available:", total_rows))  # Debugging
 
@@ -79,18 +84,5 @@ generateTestData <- function(freq_table, n = NA, extraCols = list()) {
 
   print(paste("Generated rows:", nrow(sampled_data)))  # Debugging
 
-  # Add extra columns with predefined values
-  for (col_name in names(extraCols)) {
-    values <- extraCols[[col_name]]
-
-    if (length(values) == 0) {
-      # If no values provided, create blank character column
-      sampled_data[[col_name]] <- rep("", nrow(sampled_data))
-    } else {
-      # Otherwise, recycle or sample values
-      sampled_data[[col_name]] <- rep(values, length.out = nrow(sampled_data))
-    }
-  }
-
-  return(sampled_data)
+  return(as.data.table(sampled_data))  # Convert back to `data.table` if needed
 }
