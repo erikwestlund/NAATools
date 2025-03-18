@@ -40,12 +40,6 @@ generateTestData <- function(freq_table, n = NA, extraCols = list()) {
   # Convert `n` to numeric safely
   n <- suppressWarnings(as.numeric(n))
 
-  # Debugging: Print `n` and table info
-  print(paste("n value:", n))
-  print(paste("Is numeric:", is.numeric(n)))
-  print(paste("Length of n:", length(n)))
-  print(paste("Rows in freq_table:", nrow(freq_table)))
-
   if (is.na(n)) {
     message("`n` is NA. Returning one row per unique frequency combination.")
   } else if (n < 1) {
@@ -59,9 +53,7 @@ generateTestData <- function(freq_table, n = NA, extraCols = list()) {
 
   # Make a copy to prevent modifying the original `data.table`
   freq_table <- data.table::copy(freq_table)
-
   total_rows <- nrow(freq_table)
-  print(paste("Total unique rows available:", total_rows))  # Debugging
 
   if (is.na(n)) {
     # Case 1: `n = NA`, return one row per unique value combo
@@ -69,20 +61,21 @@ generateTestData <- function(freq_table, n = NA, extraCols = list()) {
   } else if (n >= total_rows) {
     # Case 2: `n >= total_rows`, generate proportionally
     if (total_rows == 1) {
-      sampled_data <- freq_table[rep(1, length.out = n), , drop = FALSE]
+      samples <- rep(1, length.out = n)
+      sampled_data <- freq_table[samples, ]
     } else {
-      sampled_data <- freq_table[rep(seq_len(nrow(freq_table)), length.out = n), , drop = FALSE]
+      samples <- rep(seq_len(nrow(freq_table)), length.out = n)
+      sampled_data <- freq_table[samples, ]
     }
   } else {
     # Case 3: `n < total_rows`, sample with proportion
     if (n > 0 && n <= total_rows) {
-      sampled_data <- freq_table[sample(seq_len(nrow(freq_table)), size = n, replace = TRUE), , drop = FALSE]
+      samples <- sample(seq_len(nrow(freq_table)), size = n, replace = TRUE)
+      sampled_data <- freq_table[samples, ]
     } else {
       stop("Invalid `n` value for sampling. Check input.")
     }
   }
 
-  print(paste("Generated rows:", nrow(sampled_data)))  # Debugging
-
-  return(data.table::as.data.table(sampled_data))  # Ensure output is data.table
+  return(data.table::as.data.table(sampled_data))
 }
