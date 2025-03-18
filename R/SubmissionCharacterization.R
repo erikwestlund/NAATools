@@ -157,19 +157,20 @@ characterizeColumns <- function(data, cols) {
 }
 
 
-#' Calculate unique value frequencies for specified columns
+#' Calculate unique value frequencies per column
 #'
-#' Computes the frequency and percentage of unique value combinations for given columns.
+#' Computes frequency counts and percentages for each unique value in the specified columns.
+#' Each column is analyzed independently, not as a combination.
 #'
 #' @param data A data frame.
 #' @param freq_cols A character vector specifying which columns to analyze.
 #' @param required_cols A character vector of required columns that should exist in the data (missing ones are created as NA).
 #'
-#' @return A data frame containing:
-#'   - Unique value combinations of `freq_cols`.
-#'   - `{col}_n` for each `freq_cols` column, representing count of unique occurrences.
-#'   - `{col}_pct` for each `freq_cols` column, representing percentage of unique occurrences.
-#' @importFrom dplyr group_by summarise mutate across ungroup count
+#' @return A data frame where each unique value in `freq_cols` has:
+#'   - `{col}` (column name with unique values).
+#'   - `{col}_n` (count of occurrences in the data).
+#'   - `{col}_pct` (percentage of occurrences in the data).
+#' @importFrom dplyr count mutate rename left_join all_of
 #' @importFrom tidyr replace_na
 #' @importFrom rlang .data
 #' @export
@@ -197,23 +198,20 @@ calculateFrequencies <- function(data, freq_cols, required_cols) {
     }
   }
 
-  # Count unique combinations of freq_cols
-  freq_table <- dplyr::group_by(data, dplyr::across(dplyr::all_of(freq_cols))) %>%
-    dplyr::summarise(freq_n = dplyr::n(), .groups = "drop") %>%
-    dplyr::mutate(freq_pct = round(.data$freq_n / sum(.data$freq_n) * 100, 2))
+  # Initialize an empty list to store frequency tables for each column
+  freq_list <- lapply(freq_cols, function(col) {
+    if (col %in% colnames(data)) {
+      # Count occurrences of each unique value in the column
+      freq_table <- dplyr::count(data, dplyr::all_of(col), name = paste0(col, "_n"))
+      freq_table <- dplyr::mutate(freq_table, !!paste0(col, "_pct") := round(.data[[paste0(col, "_n")]] / sum(.data[[paste0(col, "_n")]]) * 100, 2))
+      return(freq_table)
+    } else {
+      return(NULL)
+    }
+  })
 
-  # Compute `_n` and `_pct` columns for each column in freq_cols
-  for (col in freq_cols) {
-    col_counts <- dplyr::count(data, dplyr::across(dplyr::all_of(col)), name = paste0(col, "_n"))
-    col_percents <- dplyr::mutate(col_counts, !!paste0(col, "_pct") := round(.data[[paste0(col, "_n")]] / sum(.data[[paste0(col, "_n")]]) * 100, 2))
+  # Combine the results into one data frame
+  freq_table_final <- dplyr::bind_rows(freq_list)
 
-    # Merge the count and percentage columns back into freq_table
-    freq_table <- dplyr::left_join(freq_table, col_percents, by = col)
-  }
-
-  # Reorder columns to ensure proper structure
-  final_cols <- c(freq_cols, as.vector(outer(freq_cols, c("_n", "_pct"), paste0)))
-  freq_table <- freq_table[, final_cols, drop = FALSE]
-
-  return(freq_table)
+  return(freq_table_final)
 }
