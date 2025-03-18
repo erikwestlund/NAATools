@@ -76,7 +76,7 @@ generateTestData <- function(freq_table, n = NA, extraCols = list()) {
   } else {
     # Case 3: `n < total_rows`, sample with proportion
     if (n > 0 && n <= total_rows) {
-      sampled_data <- freq_table[data.table::sample(seq_len(nrow(freq_table)), size = n, replace = TRUE), , drop = FALSE]
+      sampled_data <- freq_table[sample(seq_len(nrow(freq_table)), size = n, replace = TRUE), , drop = FALSE]
     } else {
       stop("Invalid `n` value for sampling. Check input.")
     }
