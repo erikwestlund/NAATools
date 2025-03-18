@@ -104,7 +104,6 @@ inferColumnTypes <- function(data, expected_types) {
 }
 
 
-# Perform detailed characterization of specified character columns
 #' Characterize Columns
 #'
 #' Analyzes the given columns in a data frame, computing unique values, count of unique values,
@@ -113,7 +112,7 @@ inferColumnTypes <- function(data, expected_types) {
 #' @param data A data frame.
 #' @param cols A character vector specifying which columns to analyze.
 #'
-#' @return A named list where each element contains:
+#' @return A named list where each element (named after the column) contains:
 #'   - `unique_values`: Unique values in the column.
 #'   - `n_unique`: Number of unique values.
 #'   - `n_missing`: Number of missing (NA) values.
@@ -125,14 +124,15 @@ inferColumnTypes <- function(data, expected_types) {
 #' @examples
 #' df <- data.frame(
 #'   col1 = c("123", "456", "abc", NA),
-#'   col2 = c("A", "B", "C", "D")
+#'   col2 = c("A", "B", "C", "D"),
+#'   col3 = c(1, 2, 3, NA)
 #' )
-#' result <- characterizeColumns(df, c("col1", "col2"))
-#' print(result)
+#' result <- characterizeColumns(df, colnames(df))
+#' print(result$col1)
 characterizeColumns <- function(data, cols) {
   if (is.null(cols)) return(NULL)
 
-  lapply(cols, function(col) {
+  result <- lapply(cols, function(col) {
     if (col %in% colnames(data)) {
       values <- data[[col]]
       non_na_values <- values[!is.na(values)]
@@ -153,28 +153,74 @@ characterizeColumns <- function(data, cols) {
       NULL
     }
   })
+
+  setNames(result, cols)  # Name the list items by column names
 }
 
 
-# Calculate unique value frequencies for specified columns
+#' Calculate unique value frequencies for specified columns
+#'
+#' Computes the frequency and percentage of unique value combinations for given columns.
+#'
+#' @param data A data frame.
+#' @param freq_cols A character vector specifying which columns to analyze.
+#' @param required_cols A character vector of required columns that should exist in the data (missing ones are created as NA).
+#'
+#' @return A data frame containing:
+#'   - Unique value combinations of `freq_cols`.
+#'   - `{col}_n` for each `freq_cols` column, representing count of unique occurrences.
+#'   - `{col}_pct` for each `freq_cols` column, representing percentage of unique occurrences.
+#' @export
+#'
+#' @examples
+#' df <- data.frame(
+#'   category = c("A", "A", "B", "B", "C"),
+#'   type = c("X", "Y", "X", "Y", "X"),
+#'   group = c(1, 2, 1, 2, 3)
+#' )
+#' result <- calculateFrequencies(df, c("category", "type", "group"), NULL)
+#' print(result)
 calculateFrequencies <- function(data, freq_cols, required_cols) {
-  # Ensure required columns exist in data
-  all_columns <- unique(c(colnames(data), required_cols))
-  missing_cols <- setdiff(required_cols, colnames(data))
-  for (col in missing_cols) {
-    data[[col]] <- NA_character_
+  stopifnot(
+    is.data.frame(data),
+    is.character(freq_cols),
+    length(freq_cols) > 0
+  )
+
+  # Ensure required columns exist
+  if (!is.null(required_cols)) {
+    missing_cols <- setdiff(required_cols, colnames(data))
+    for (col in missing_cols) {
+      data[[col]] <- NA_character_
+    }
   }
 
-  # Get unique combinations
+  # Select only frequency columns
   freq_table <- data[, freq_cols, drop = FALSE]
-  freq_table <- na.omit(freq_table)
-  freq_table <- as.data.frame(table(freq_table))
 
-  # Rename count column
-  colnames(freq_table)[ncol(freq_table)] <- "freq_n"
+  # Get unique combinations of freq_cols
+  freq_table <- as.data.frame(table(freq_table, useNA = "ifany"), stringsAsFactors = FALSE)
+  colnames(freq_table)[ncol(freq_table)] <- "freq_n"  # Rename count column
 
-  # Calculate percentages
+  # Compute percentage
   freq_table$freq_pct <- round(freq_table$freq_n / sum(freq_table$freq_n) * 100, 2)
 
-  freq_table
+  # Add `_n` and `_pct` columns for each column in freq_cols
+  for (col in freq_cols) {
+    grouped_counts <- aggregate(freq_n ~ get(col), data = freq_table, sum)
+    colnames(grouped_counts) <- c(col, paste0(col, "_n"))
+
+    grouped_percents <- aggregate(freq_pct ~ get(col), data = freq_table, sum)
+    colnames(grouped_percents) <- c(col, paste0(col, "_pct"))
+
+    # Merge back into the main table
+    freq_table <- merge(freq_table, grouped_counts, by = col, all.x = TRUE)
+    freq_table <- merge(freq_table, grouped_percents, by = col, all.x = TRUE)
+  }
+
+  # Reorder columns to ensure proper structure
+  final_cols <- c(freq_cols, as.vector(outer(freq_cols, c("_n", "_pct"), paste0)))
+  freq_table <- freq_table[, final_cols, drop = FALSE]
+
+  return(freq_table)
 }
