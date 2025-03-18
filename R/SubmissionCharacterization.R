@@ -3,7 +3,9 @@
 #' Analyzes a data frame’s metadata, column types, and frequency distributions.
 #'
 #' @param df A data frame to be analyzed.
-#' @param meta A list containing metadata details such as column types, required columns, and frequency analysis columns.
+#' @param meta A list containing metadata details. Must include:
+#'   - `types`: Expected column types.
+#'   - `freq_cols`: Columns to compute frequency distributions.
 #'
 #' @return A list with two elements:
 #'   \item{meta}{A list containing metadata, including row count, column types, and characterizations.}
@@ -15,27 +17,29 @@
 #' df <- read.csv("data.csv", stringsAsFactors = FALSE)
 #' meta_info <- list(
 #'   types = c("col1" = "numeric", "col2" = "character"),
-#'   required_cols = c("col1", "col3"),
+#'   freq_cols = c("col1", "col2"),
 #'   char_cols = c("col2"),
-#'   freq_cols = c("col1", "col2")
+#'   required_cols = c("col1", "col3")
 #' )
 #' result <- characterizeDf(df, meta_info)
 #' print(result$meta)
 #' print(result$freqs)
 #' }
 characterizeDf <- function(df, meta) {
-  stopifnot(is.data.frame(df))
+  stopifnot(
+    is.data.frame(df),
+    is.list(meta),
+    "types" %in% names(meta),
+    "freq_cols" %in% names(meta)
+  )
 
   meta_info <- list(
     n = nrow(df),
     types = inferColumnTypes(df, meta$types),
-    characterizations = characterizeColumns(df, meta$char_cols)
+    characterizations = if ("char_cols" %in% names(meta)) characterizeColumns(df, meta$char_cols) else NULL
   )
 
-  freqs <- NULL
-  if (!is.null(meta$freq_cols)) {
-    freqs <- calculateFrequencies(df, meta$freq_cols, meta$required_cols)
-  }
+  freqs <- calculateFrequencies(df, meta$freq_cols, meta$required_cols %||% NULL)
 
   list(meta = meta_info, freqs = freqs)
 }
@@ -94,22 +98,58 @@ inferColumnTypes <- function(data, expected_types) {
   as.list(inferred_types)
 }
 
-# Perform detailed characterization of specified character columns
-characterizeColumns <- function(data, char_cols) {
-  if (is.null(char_cols)) return(NULL)
 
-  lapply(char_cols, function(col) {
+# Perform detailed characterization of specified character columns
+#' Characterize Columns
+#'
+#' Analyzes the given columns in a data frame, computing unique values, count of unique values,
+#' missing values, and percentages of values that validate as numeric and character.
+#'
+#' @param data A data frame.
+#' @param cols A character vector specifying which columns to analyze.
+#'
+#' @return A named list where each element contains:
+#'   - `unique_values`: Unique values in the column.
+#'   - `n_unique`: Number of unique values.
+#'   - `n_missing`: Number of missing (NA) values.
+#'   - `n_na`: Alias for `n_missing`, same value.
+#'   - `percent_numeric`: Percentage of values that are valid numerics.
+#'   - `percent_character`: Percentage of values that are valid characters.
+#' @export
+#'
+#' @examples
+#' df <- data.frame(
+#'   col1 = c("123", "456", "abc", NA),
+#'   col2 = c("A", "B", "C", "D")
+#' )
+#' result <- characterizeColumns(df, c("col1", "col2"))
+#' print(result)
+characterizeColumns <- function(data, cols) {
+  if (is.null(cols)) return(NULL)
+
+  lapply(cols, function(col) {
     if (col %in% colnames(data)) {
+      values <- data[[col]]
+      non_na_values <- values[!is.na(values)]
+
+      percent_numeric <- mean(suppressWarnings(!is.na(as.numeric(non_na_values)))) * 100
+      percent_character <- mean(!is.na(non_na_values)) * 100  # Everything non-NA is character in R
+      n_missing <- sum(is.na(values))
+
       list(
-        unique_values = unique(data[[col]]),
-        n_unique = length(unique(data[[col]])),
-        n_na = sum(is.na(data[[col]]))
+        unique_values = unique(values),
+        n_unique = length(unique(values)),
+        n_missing = n_missing,
+        n_na = n_missing,  # Alias
+        percent_numeric = percent_numeric,
+        percent_character = percent_character
       )
     } else {
       NULL
     }
   })
 }
+
 
 # Calculate unique value frequencies for specified columns
 calculateFrequencies <- function(data, freq_cols, required_cols) {
