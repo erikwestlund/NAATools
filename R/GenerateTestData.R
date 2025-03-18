@@ -18,9 +18,7 @@
 #' freq_table <- data.frame(
 #'   category = c("A", "B", "C"),
 #'   type = c("X", "Y", "X"),
-#'   group = c(1, 2, 1),
-#'   category_n = c(10, 20, 30),  # These should be removed
-#'   category_pct = c(20, 40, 40) # These should be removed
+#'   group = c(1, 2, 1)
 #' )
 #'
 #' test_data <- generateTestData(freq_table, n = 100, extraCols = list(
@@ -29,13 +27,23 @@
 #' ))
 #' print(test_data)
 generateTestData <- function(freq_table, n = NA, extraCols = list()) {
-  stopifnot(
-    is.data.frame(freq_table),
-    is.numeric(n) || is.na(n),
-    is.list(extraCols)
-  )
+  stopifnot(is.data.frame(freq_table), is.list(extraCols))
 
-  # Remove any `_n` and `_pct` columns if they exist
+  # Ensure `n` is numeric and not invalid
+  if (is.null(n) || identical(n, "")) {
+    n <- NA
+  }
+  n <- suppressWarnings(as.numeric(n))
+  if (is.na(n) && !is.na(nrow(freq_table))) {
+    stop("`n` must be a numeric value or NA.")
+  }
+
+  # Ensure `freq_table` is not empty
+  if (nrow(freq_table) == 0) {
+    stop("`freq_table` is empty. Cannot generate synthetic data.")
+  }
+
+  # Remove `_n` and `_pct` columns if they exist
   freq_table <- freq_table[, !grepl("(_n|_pct)$", colnames(freq_table)), drop = FALSE]
 
   total_rows <- nrow(freq_table)
