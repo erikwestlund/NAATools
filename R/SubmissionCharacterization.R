@@ -7,23 +7,27 @@
 #'   - `types`: Expected column types.
 #'   - `freq_cols`: Columns to compute frequency distributions.
 #'
-#' @return A list with two elements:
-#'   \item{meta}{A list containing metadata, including row count, column types, and characterizations.}
+#' @return A list with three elements:
+#'   \item{meta}{A list containing metadata, including row count and column types.}
 #'   \item{freqs}{A data frame containing unique value combinations of specified columns with frequency counts and percentages.}
+#'   \item{characterizations}{A list characterizing all columns, including unique counts, missing values, and validation percentages.}
 #' @export
 #'
 #' @examples
 #' \dontrun{
-#' df <- read.csv("data.csv", stringsAsFactors = FALSE)
+#' df <- data.frame(
+#'   col1 = c("123", "456", "abc", NA),
+#'   col2 = c("A", "B", "C", "D")
+#' )
 #' meta_info <- list(
 #'   types = c("col1" = "numeric", "col2" = "character"),
 #'   freq_cols = c("col1", "col2"),
-#'   char_cols = c("col2"),
 #'   required_cols = c("col1", "col3")
 #' )
 #' result <- characterizeDf(df, meta_info)
 #' print(result$meta)
 #' print(result$freqs)
+#' print(result$characterizations)
 #' }
 characterizeDf <- function(df, meta) {
   stopifnot(
@@ -35,13 +39,14 @@ characterizeDf <- function(df, meta) {
 
   meta_info <- list(
     n = nrow(df),
-    types = inferColumnTypes(df, meta$types),
-    characterizations = if ("char_cols" %in% names(meta)) characterizeColumns(df, meta$char_cols) else NULL
+    types = inferColumnTypes(df, meta$types)
   )
 
   freqs <- calculateFrequencies(df, meta$freq_cols, meta$required_cols %||% NULL)
 
-  list(meta = meta_info, freqs = freqs)
+  characterizations <- characterizeColumns(df, colnames(df))  # Characterizing ALL columns
+
+  list(meta = meta_info, freqs = freqs, characterizations = characterizations)
 }
 
 
