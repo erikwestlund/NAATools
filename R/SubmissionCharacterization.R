@@ -157,20 +157,21 @@ characterizeColumns <- function(data, cols) {
 }
 
 
-#' Calculate unique value frequencies per column
+#' Calculate unique value frequencies per column with type enforcement
 #'
-#' Computes frequency counts and percentages for each unique value in the specified columns.
-#' Each column is analyzed independently, not as a combination.
+#' Computes frequency counts and percentages for each unique value in the specified columns,
+#' ensuring that the columns match the specified types.
 #'
 #' @param data A data frame.
 #' @param freq_cols A character vector specifying which columns to analyze.
 #' @param required_cols A character vector of required columns that should exist in the data (missing ones are created as NA).
+#' @param col_types A named character vector specifying expected column types (e.g., `c("col1" = "numeric", "col2" = "character")`).
 #'
 #' @return A data frame where each unique value in `freq_cols` has:
 #'   - `{col}` (column name with unique values).
 #'   - `{col}_n` (count of occurrences in the data).
 #'   - `{col}_pct` (percentage of occurrences in the data).
-#' @importFrom dplyr count mutate rename left_join all_of
+#' @importFrom dplyr distinct left_join mutate select all_of count
 #' @importFrom tidyr replace_na
 #' @importFrom rlang .data
 #' @export
@@ -181,30 +182,51 @@ characterizeColumns <- function(data, cols) {
 #'   type = c("X", "Y", "X", "Y", "X"),
 #'   group = c(1, 2, 1, 2, 3)
 #' )
-#' result <- calculateFrequencies(df, c("category", "type", "group"), NULL)
+#' col_types <- c("category" = "character", "type" = "character", "group" = "numeric")
+#' result <- calculateFrequencies(df, c("category", "type", "group"), NULL, col_types)
 #' print(result)
-calculateFrequencies <- function(data, freq_cols, required_cols) {
+calculateFrequencies <- function(data, freq_cols, required_cols, col_types) {
   stopifnot(
     is.data.frame(data),
     is.character(freq_cols),
-    length(freq_cols) > 0
+    length(freq_cols) > 0,
+    is.null(col_types) || is.list(col_types) || is.character(col_types)
   )
 
-  # Ensure required columns exist
-  if (!is.null(required_cols)) {
-    missing_cols <- setdiff(required_cols, colnames(data))
-    for (col in missing_cols) {
-      data[[col]] <- NA_character_
+  # Ensure all columns in `col_types` exist in the data, creating them if missing
+  missing_cols <- setdiff(names(col_types), colnames(data))
+  for (col in missing_cols) {
+    data[[col]] <- NA_character_
+  }
+
+  # Enforce column types and replace NAs with ""
+  for (col in names(col_types)) {
+    if (col %in% colnames(data)) {
+      if (col_types[[col]] == "numeric") {
+        data[[col]] <- suppressWarnings(as.numeric(data[[col]]))
+      } else {
+        data[[col]] <- as.character(data[[col]])
+      }
+      data[[col]][is.na(data[[col]])] <- ""  # Replace NA with empty string
     }
   }
 
   # Initialize an empty list to store frequency tables for each column
   freq_list <- lapply(freq_cols, function(col) {
     if (col %in% colnames(data)) {
-      # Count occurrences of each unique value in the column
-      freq_table <- dplyr::count(data, dplyr::all_of(col), name = paste0(col, "_n"))
-      freq_table <- dplyr::mutate(freq_table, !!paste0(col, "_pct") := round(.data[[paste0(col, "_n")]] / sum(.data[[paste0(col, "_n")]]) * 100, 2))
-      return(freq_table)
+      # Step 1: Get unique values for the column
+      unique_values <- dplyr::distinct(data, dplyr::all_of(col))
+
+      # Step 2: Count occurrences of each unique value in the original dataset
+      value_counts <- dplyr::count(data, dplyr::all_of(col), name = paste0(col, "_n"))
+
+      # Step 3: Calculate percentages
+      value_counts <- dplyr::mutate(value_counts, !!paste0(col, "_pct") := round(.data[[paste0(col, "_n")]] / sum(.data[[paste0(col, "_n")]]) * 100, 2))
+
+      # Step 4: Merge counts & percentages with unique values
+      final_table <- dplyr::left_join(unique_values, value_counts, by = col)
+
+      return(final_table)
     } else {
       return(NULL)
     }
