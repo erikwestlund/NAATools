@@ -55,8 +55,6 @@ generateTestData <- function(freq_table, n = NA, extraCols = list()) {
   }
 
   # Remove `_n` and `_pct` columns if they exist
-  freq_table <- freq_table[, !grepl("(_n|_pct)$", colnames(freq_table)), drop = FALSE]
-
   total_rows <- nrow(freq_table)
   print(paste("Total unique rows available:", total_rows))  # Debugging
 
