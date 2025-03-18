@@ -42,7 +42,7 @@ characterizeDf <- function(df, meta) {
     types = inferColumnTypes(df, meta$types)
   )
 
-  freqs <- calculateFrequencies(df, meta$freq_cols, meta$required_cols %||% NULL)
+  freqs <- calculateFrequencies(df, meta$freq_cols,  meta$required_cols %||% NULL, meta$types)
 
   characterizations <- characterizeColumns(df, colnames(df))  # Characterizing ALL columns
 
