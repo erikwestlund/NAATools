@@ -83,7 +83,6 @@ characterizeFile <- function(file, meta) {
 }
 
 
-
 # Infer column types based on provided types and validate numeric columns
 inferColumnTypes <- function(data, expected_types) {
   inferred_types <- sapply(data, class)
@@ -170,6 +169,9 @@ characterizeColumns <- function(data, cols) {
 #'   - Unique value combinations of `freq_cols`.
 #'   - `{col}_n` for each `freq_cols` column, representing count of unique occurrences.
 #'   - `{col}_pct` for each `freq_cols` column, representing percentage of unique occurrences.
+#' @importFrom dplyr group_by summarise mutate across ungroup count
+#' @importFrom tidyr replace_na
+#' @importFrom rlang .data
 #' @export
 #'
 #' @examples
@@ -195,27 +197,18 @@ calculateFrequencies <- function(data, freq_cols, required_cols) {
     }
   }
 
-  # Select only frequency columns
-  freq_table <- data[, freq_cols, drop = FALSE]
+  # Count unique combinations of freq_cols
+  freq_table <- dplyr::group_by(data, dplyr::across(dplyr::all_of(freq_cols))) %>%
+    dplyr::summarise(freq_n = dplyr::n(), .groups = "drop") %>%
+    dplyr::mutate(freq_pct = round(.data$freq_n / sum(.data$freq_n) * 100, 2))
 
-  # Get unique combinations of freq_cols
-  freq_table <- as.data.frame(table(freq_table, useNA = "ifany"), stringsAsFactors = FALSE)
-  colnames(freq_table)[ncol(freq_table)] <- "freq_n"  # Rename count column
-
-  # Compute percentage
-  freq_table$freq_pct <- round(freq_table$freq_n / sum(freq_table$freq_n) * 100, 2)
-
-  # Add `_n` and `_pct` columns for each column in freq_cols
+  # Compute `_n` and `_pct` columns for each column in freq_cols
   for (col in freq_cols) {
-    grouped_counts <- aggregate(freq_n ~ get(col), data = freq_table, sum)
-    colnames(grouped_counts) <- c(col, paste0(col, "_n"))
+    col_counts <- dplyr::count(data, dplyr::across(dplyr::all_of(col)), name = paste0(col, "_n"))
+    col_percents <- dplyr::mutate(col_counts, !!paste0(col, "_pct") := round(.data[[paste0(col, "_n")]] / sum(.data[[paste0(col, "_n")]]) * 100, 2))
 
-    grouped_percents <- aggregate(freq_pct ~ get(col), data = freq_table, sum)
-    colnames(grouped_percents) <- c(col, paste0(col, "_pct"))
-
-    # Merge back into the main table
-    freq_table <- merge(freq_table, grouped_counts, by = col, all.x = TRUE)
-    freq_table <- merge(freq_table, grouped_percents, by = col, all.x = TRUE)
+    # Merge the count and percentage columns back into freq_table
+    freq_table <- dplyr::left_join(freq_table, col_percents, by = col)
   }
 
   # Reorder columns to ensure proper structure
