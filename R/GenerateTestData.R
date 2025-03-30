@@ -83,11 +83,31 @@ generateTestData <- function(freq_table, n = NA, extraCols = list(), countCol = 
     for (colName in names(extraCols)) {
       value <- extraCols[[colName]]
 
+      # Special generator: ID as character
       if (is.character(value) && length(value) == 1 && value == "id") {
         sampled_data[, (colName) := as.character(seq_len(true_n))]
         next
       }
 
+      # Special generator: date
+      if (is.list(value) && !is.null(value$type) && value$type == "date") {
+        minDate <- as.Date(value$minDate)
+        maxDate <- as.Date(value$maxDate)
+        if (is.na(minDate) || is.na(maxDate)) {
+          stop(sprintf("Invalid minDate or maxDate for column '%s'", colName))
+        }
+        if (maxDate < minDate) {
+          stop(sprintf("maxDate must be after minDate for column '%s'", colName))
+        }
+        nDays <- as.integer(maxDate - minDate)
+        dates <- minDate + sample.int(nDays + 1, size = true_n, replace = TRUE)
+
+        formatString <- value$format %||% "%Y-%m-%d"
+        sampled_data[, (colName) := format(dates, format = formatString)]
+        next
+      }
+
+      # Otherwise: vector value or literal
       if (is.list(value)) value <- unlist(value)
 
       valueLength <- length(value)
