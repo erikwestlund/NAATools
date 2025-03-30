@@ -51,20 +51,19 @@ generateTestData <- function(freq_table, n = NA, extraCols = list()) {
 
   total_rows <- nrow(freq_table)
 
+  # Determine sampled_data and set true_n
   if (is.na(n)) {
     message("`n` is NA. Returning one row per unique frequency combination.")
     sampled_data <- freq_table
-    n <- nrow(sampled_data)
-    print(paste0("1. n = ", n))
   } else if (n >= total_rows) {
     samples <- rep(seq_len(total_rows), length.out = n)
     sampled_data <- freq_table[samples, ]
-    print(paste0("2. n = ", n))
   } else {
     samples <- sample(seq_len(total_rows), size = n, replace = TRUE)
     sampled_data <- freq_table[samples, ]
-    print(paste0("3. n = ", n))
   }
+
+  true_n <- nrow(sampled_data)
 
   # Add extraCols
   if (length(extraCols) > 0) {
@@ -72,18 +71,17 @@ generateTestData <- function(freq_table, n = NA, extraCols = list()) {
       value <- extraCols[[colName]]
 
       if (is.character(value) && length(value) == 1 && value == "id") {
-        sampled_data[, (colName) := seq_len(n)]
+        sampled_data[, (colName) := seq_len(true_n)]
         next
       }
 
-      # Flatten list if necessary
       if (is.list(value)) value <- unlist(value)
 
       valueLength <- length(value)
-      if (valueLength == 1 || valueLength == n || (n %% valueLength == 0)) {
-        sampled_data[, (colName) := rep(value, length.out = n)]
+      if (valueLength == 1 || valueLength == true_n || (true_n %% valueLength == 0)) {
+        sampled_data[, (colName) := rep(value, length.out = true_n)]
       } else {
-        stop(sprintf("Length of extraCols[['%s']] (%d) cannot be recycled to length n (%d)", colName, valueLength, n))
+        stop(sprintf("Length of extraCols[['%s']] (%d) cannot be recycled to match row count (%d)", colName, valueLength, true_n))
       }
     }
   }
