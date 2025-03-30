@@ -45,10 +45,10 @@ generateTestData <- function(freq_table, n = NA, extraCols = list(), countCol = 
 
   # Sort by frequency if countCol is present
   if (!is.null(countCol)) {
-    data.table::setorder(freq_table, -get(countCol))
+    data.table::setorderv(freq_table, cols = countCol, order = -1)
   }
 
-  # Convert n
+  # Convert n safely
   if (is.null(n) || identical(n, "") || length(n) == 0) {
     n <- NA_real_
   } else {
