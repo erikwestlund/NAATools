@@ -41,7 +41,7 @@ generateTestData <- function(freq_table, n = NA, extraCols = list()) {
 
   freq_table <- data.table::copy(freq_table)
 
-  # Count frequency of unique rows and sort by descending count
+  # Sort by most frequent combinations
   freq_table[, freq_count := .N, by = names(freq_table)]
   freq_table <- unique(freq_table)
   data.table::setorder(freq_table, -freq_count)
@@ -65,17 +65,21 @@ generateTestData <- function(freq_table, n = NA, extraCols = list()) {
   if (length(extraCols) > 0) {
     for (colName in names(extraCols)) {
       value <- extraCols[[colName]]
-      if (identical(colName, "id")) {
+
+      # Special keyword: "id"
+      if (identical(value, "id")) {
         sampled_data[, (colName) := seq_len(n)]
+        next
+      }
+
+      # Convert list elements to flat vector if needed
+      if (is.list(value)) value <- unlist(value)
+
+      valueLength <- length(value)
+      if (valueLength == 1 || valueLength == n || (n %% valueLength == 0)) {
+        sampled_data[, (colName) := rep(value, length.out = n)]
       } else {
-        valueLength <- length(value)
-        if (valueLength == n || valueLength == 1) {
-          sampled_data[, (colName) := rep(value, length.out = n)]
-        } else if (n %% valueLength == 0) {
-          sampled_data[, (colName) := rep(value, length.out = n)]
-        } else {
-          stop(sprintf("Length of extraCols[[%s]] (%d) cannot be recycled to length n (%d)", colName, valueLength, n))
-        }
+        stop(sprintf("Length of extraCols[['%s']] (%d) cannot be recycled to length n (%d)", colName, valueLength, n))
       }
     }
   }
