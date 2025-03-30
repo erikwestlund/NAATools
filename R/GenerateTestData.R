@@ -24,7 +24,7 @@
 #'
 #' test_data <- generateTestData(freq_table, n = 100)
 #' print(test_data)
-generateTestData <- function(freq_table, n = NA, extraCols = list(), countCol = NULL) {
+generateTestData <- function(freq_table, n = NA, extraCols = list(), countCol = NULL, colOrder = NULL) {
   stopifnot(data.table::is.data.table(freq_table) || is.data.frame(freq_table), is.list(extraCols))
 
   if (!data.table::is.data.table(freq_table)) {
@@ -40,8 +40,7 @@ generateTestData <- function(freq_table, n = NA, extraCols = list(), countCol = 
 
   # Auto-detect or validate countCol
   if (is.null(countCol)) {
-    possibleCols <- c("count")
-    countCol <- intersect(possibleCols, names(freq_table))
+    countCol <- intersect("count", names(freq_table))
     if (length(countCol) == 0) countCol <- NULL
   } else if (!countCol %in% names(freq_table)) {
     stop(sprintf("countCol '%s' not found in freq_table", countCol))
@@ -85,7 +84,7 @@ generateTestData <- function(freq_table, n = NA, extraCols = list(), countCol = 
       value <- extraCols[[colName]]
 
       if (is.character(value) && length(value) == 1 && value == "id") {
-        sampled_data[, (colName) := seq_len(true_n)]
+        sampled_data[, (colName) := as.character(seq_len(true_n))]
         next
       }
 
@@ -98,6 +97,18 @@ generateTestData <- function(freq_table, n = NA, extraCols = list(), countCol = 
         stop(sprintf("Length of extraCols[['%s']] (%d) cannot be recycled to match row count (%d)", colName, valueLength, true_n))
       }
     }
+  }
+
+  # Handle colOrder: enforce order, add missing columns, then bind extras
+  if (!is.null(colOrder)) {
+    missingCols <- setdiff(colOrder, names(sampled_data))
+    for (col in missingCols) {
+      sampled_data[, (col) := rep("", true_n)]
+    }
+
+    # Ensure all requested columns come first, rest follow
+    finalCols <- c(colOrder, setdiff(names(sampled_data), colOrder))
+    sampled_data <- sampled_data[, ..finalCols]
   }
 
   return(data.table::as.data.table(sampled_data))
