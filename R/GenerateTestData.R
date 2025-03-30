@@ -31,17 +31,19 @@ generateTestData <- function(freq_table, n = NA, extraCols = list()) {
     data.table::setDT(freq_table)
   }
 
+  # Convert n safely
   if (is.null(n) || identical(n, "") || length(n) == 0) {
-    n <- NA
+    n <- NA_real_
+  } else {
+    n <- suppressWarnings(as.numeric(n))
   }
-  n <- suppressWarnings(as.numeric(n))
 
-  if (!is.na(n) && n < 1) stop("`n` must be a positive number.")
+  if (!is.na(n) && (n < 1 || is.nan(n))) stop("`n` must be a positive number.")
   if (nrow(freq_table) == 0) stop("`freq_table` is empty. Cannot generate synthetic data.")
 
   freq_table <- data.table::copy(freq_table)
 
-  # Sort by most frequent combinations
+  # Sort by frequency
   freq_table[, freq_count := .N, by = names(freq_table)]
   freq_table <- unique(freq_table)
   data.table::setorder(freq_table, -freq_count)
@@ -53,12 +55,15 @@ generateTestData <- function(freq_table, n = NA, extraCols = list()) {
     message("`n` is NA. Returning one row per unique frequency combination.")
     sampled_data <- freq_table
     n <- nrow(sampled_data)
+    print(paste0("1. n = ", n))
   } else if (n >= total_rows) {
-    samples <- rep(seq_len(nrow(freq_table)), length.out = n)
+    samples <- rep(seq_len(total_rows), length.out = n)
     sampled_data <- freq_table[samples, ]
+    print(paste0("2. n = ", n))
   } else {
-    samples <- sample(seq_len(nrow(freq_table)), size = n, replace = TRUE)
+    samples <- sample(seq_len(total_rows), size = n, replace = TRUE)
     sampled_data <- freq_table[samples, ]
+    print(paste0("3. n = ", n))
   }
 
   # Add extraCols
@@ -66,13 +71,12 @@ generateTestData <- function(freq_table, n = NA, extraCols = list()) {
     for (colName in names(extraCols)) {
       value <- extraCols[[colName]]
 
-      # Special keyword: "id"
-      if (identical(value, "id")) {
+      if (is.character(value) && length(value) == 1 && value == "id") {
         sampled_data[, (colName) := seq_len(n)]
         next
       }
 
-      # Convert list elements to flat vector if needed
+      # Flatten list if necessary
       if (is.list(value)) value <- unlist(value)
 
       valueLength <- length(value)
