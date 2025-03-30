@@ -1,3 +1,29 @@
+#' Generate a synthetic dataset based on a frequency table
+#'
+#' This function generates a synthetic dataset based on a frequency table.
+#' If `n = NA`, it returns one row per unique frequency combination.
+#' If `n >= total`, it generates data proportionally based on row counts.
+#' If `n < total`, it samples while trying to maintain proportions.
+#'
+#' @param freq_table A data frame or data.table containing the frequency table.
+#' @param n The number of rows to generate (if NA, generates 1 row per unique frequency combo).
+#' @param extraCols A named list where each key is a column name to add and
+#'   the value is a vector of predefined values that will be recycled or sampled.
+#'
+#' @return A data.table with `n` rows based on the frequency table.
+#' @importFrom data.table as.data.table setDT copy
+#' @export
+#'
+#' @examples
+#' library(data.table)
+#' freq_table <- data.table::data.table(
+#'   category = c("A", "B", "C"),
+#'   type = c("X", "Y", "X"),
+#'   group = c(1, 2, 1)
+#' )
+#'
+#' test_data <- generateTestData(freq_table, n = 100)
+#' print(test_data)
 generateTestData <- function(freq_table, n = NA, extraCols = list()) {
   stopifnot(data.table::is.data.table(freq_table) || is.data.frame(freq_table), is.list(extraCols))
 
