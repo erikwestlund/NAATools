@@ -111,5 +111,9 @@ generateTestData <- function(freq_table, n = NA, extraCols = list(), countCol = 
     sampled_data <- sampled_data[, ..finalCols]
   }
 
-  return(data.table::as.data.table(sampled_data))
+  # Remove count, pct columns
+  final_df <- data.table::as.data.table(sampled_data) |>
+    dplyr::select(-count, -pct)
+
+  return(final_df)
 }
