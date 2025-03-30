@@ -24,14 +24,31 @@
 #'
 #' test_data <- generateTestData(freq_table, n = 100)
 #' print(test_data)
-generateTestData <- function(freq_table, n = NA, extraCols = list()) {
+generateTestData <- function(freq_table, n = NA, extraCols = list(), countCol = NULL) {
   stopifnot(data.table::is.data.table(freq_table) || is.data.frame(freq_table), is.list(extraCols))
 
   if (!data.table::is.data.table(freq_table)) {
     data.table::setDT(freq_table)
   }
 
-  # Convert n safely
+  freq_table <- data.table::copy(freq_table)
+
+  # Infer or check count column
+  if (is.null(countCol)) {
+    possibleCols <- c("count", "freq", "n", "frequency")
+    countCol <- names(freq_table)[tolower(names(freq_table)) %in% possibleCols]
+    if (length(countCol) > 1) stop("Multiple possible count columns found. Please specify `countCol` explicitly.")
+    if (length(countCol) == 0) countCol <- NULL
+  } else if (!countCol %in% names(freq_table)) {
+    stop(sprintf("countCol '%s' not found in freq_table", countCol))
+  }
+
+  # Sort by frequency if countCol is present
+  if (!is.null(countCol)) {
+    data.table::setorder(freq_table, -get(countCol))
+  }
+
+  # Convert n
   if (is.null(n) || identical(n, "") || length(n) == 0) {
     n <- NA_real_
   } else {
@@ -41,25 +58,19 @@ generateTestData <- function(freq_table, n = NA, extraCols = list()) {
   if (!is.na(n) && (n < 1 || is.nan(n))) stop("`n` must be a positive number.")
   if (nrow(freq_table) == 0) stop("`freq_table` is empty. Cannot generate synthetic data.")
 
-  freq_table <- data.table::copy(freq_table)
-
-  # Sort by frequency
-  freq_table[, freq_count := .N, by = names(freq_table)]
-  freq_table <- unique(freq_table)
-  data.table::setorder(freq_table, -freq_count)
-  freq_table[, freq_count := NULL]
-
-  total_rows <- nrow(freq_table)
-
-  # Determine sampled_data and set true_n
+  # Sampling
   if (is.na(n)) {
     message("`n` is NA. Returning one row per unique frequency combination.")
     sampled_data <- freq_table
-  } else if (n >= total_rows) {
-    samples <- rep(seq_len(total_rows), length.out = n)
+  } else if (!is.null(countCol)) {
+    weights <- freq_table[[countCol]]
+    samples <- sample(seq_len(nrow(freq_table)), size = n, replace = TRUE, prob = weights)
+    sampled_data <- freq_table[samples, ]
+  } else if (n >= nrow(freq_table)) {
+    samples <- rep(seq_len(nrow(freq_table)), length.out = n)
     sampled_data <- freq_table[samples, ]
   } else {
-    samples <- sample(seq_len(total_rows), size = n, replace = TRUE)
+    samples <- sample(seq_len(nrow(freq_table)), size = n, replace = TRUE)
     sampled_data <- freq_table[samples, ]
   }
 
