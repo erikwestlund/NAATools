@@ -33,11 +33,15 @@ generateTestData <- function(freq_table, n = NA, extraCols = list(), countCol = 
 
   freq_table <- data.table::copy(freq_table)
 
-  # Infer or check count column
+  # Normalize column name: rename "n" to "count" if present
+  if ("n" %in% names(freq_table)) {
+    data.table::setnames(freq_table, "n", "count")
+  }
+
+  # Auto-detect or validate countCol
   if (is.null(countCol)) {
-    possibleCols <- c("count", "freq", "n", "frequency")
-    countCol <- names(freq_table)[tolower(names(freq_table)) %in% possibleCols]
-    if (length(countCol) > 1) stop("Multiple possible count columns found. Please specify `countCol` explicitly.")
+    possibleCols <- c("count")
+    countCol <- intersect(possibleCols, names(freq_table))
     if (length(countCol) == 0) countCol <- NULL
   } else if (!countCol %in% names(freq_table)) {
     stop(sprintf("countCol '%s' not found in freq_table", countCol))
@@ -60,7 +64,6 @@ generateTestData <- function(freq_table, n = NA, extraCols = list(), countCol = 
 
   # Sampling
   if (is.na(n)) {
-    message("`n` is NA. Returning one row per unique frequency combination.")
     sampled_data <- freq_table
   } else if (!is.null(countCol)) {
     weights <- freq_table[[countCol]]

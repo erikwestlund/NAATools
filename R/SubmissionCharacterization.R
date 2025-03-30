@@ -38,13 +38,13 @@ characterizeDf <- function(df, meta) {
   )
 
   meta_info <- list(
-    n = nrow(df),
+    count = nrow(df),
     types = inferColumnTypes(df, meta$types)
   )
 
-  freqs <- calculateFrequencies(df, meta$freq_cols,  meta$required_cols %||% NULL, meta$types)
+  freqs <- calculateFrequencies(df, meta$freq_cols, meta$required_cols %||% NULL, meta$types)
 
-  characterizations <- characterizeColumns(df, colnames(df))  # Characterizing ALL columns
+  characterizations <- characterizeColumns(df, colnames(df))
 
   list(meta = meta_info, freqs = freqs, characterizations = characterizations)
 }
@@ -191,7 +191,6 @@ calculateFrequencies <- function(data, freq_cols, required_cols, col_types) {
     is.null(col_types) || is.list(col_types) || is.character(col_types)
   )
 
-  # Convert data to data.table (modifies in-place for speed)
   data.table::setDT(data)
 
   # Ensure required columns exist
@@ -208,12 +207,14 @@ calculateFrequencies <- function(data, freq_cols, required_cols, col_types) {
       } else {
         data[[col]] <- as.character(data[[col]])
       }
-      data[[col]][is.na(data[[col]])] <- ""  # Replace NA with empty string
+      data[[col]][is.na(data[[col]])] <- ""
     }
   }
 
-  # Compute frequencies efficiently using data.table
-  result <- data[, .(n = .N), by = freq_cols][, pct := n / .N * 100]
+  total_rows <- nrow(data)
+
+  # Compute frequencies
+  result <- data[, .(count = .N), by = freq_cols][, pct := count / total_rows * 100]
 
   return(result)
 }
