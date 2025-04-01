@@ -23,7 +23,7 @@ by passing the data frame to `characterizeDf()`.
 \examples{
 \dontrun{
 meta_info <- list(
-  types = c("col1" = "numeric", "col2" = "character"),
+  types = c("col1" = "numeric", "col2" = "string"),
   required_cols = c("col1", "col3"),
   char_cols = c("col2"),
   freq_cols = c("col1", "col2")

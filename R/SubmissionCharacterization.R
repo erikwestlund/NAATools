@@ -20,7 +20,7 @@
 #'   col2 = c("A", "B", "C", "D")
 #' )
 #' meta_info <- list(
-#'   types = c("col1" = "numeric", "col2" = "character"),
+#'   types = c("col1" = "numeric", "col2" = "string"),
 #'   freq_cols = c("col1", "col2"),
 #'   required_cols = c("col1", "col3")
 #' )
@@ -66,7 +66,7 @@ characterizeDf <- function(df, meta) {
 #' @examples
 #' \dontrun{
 #' meta_info <- list(
-#'   types = c("col1" = "numeric", "col2" = "character"),
+#'   types = c("col1" = "numeric", "col2" = "string"),
 #'   required_cols = c("col1", "col3"),
 #'   char_cols = c("col2"),
 #'   freq_cols = c("col1", "col2")
@@ -165,7 +165,7 @@ characterizeColumns <- function(data, cols) {
 #' @param data A data frame.
 #' @param freq_cols A character vector specifying which columns to analyze.
 #' @param required_cols A character vector of required columns that should exist in the data (missing ones are created as NA).
-#' @param col_types A named character vector specifying expected column types (e.g., `c("col1" = "numeric", "col2" = "character")`).
+#' @param col_types A named character vector specifying expected column types (e.g., `c("col1" = "numeric", "col2" = "string")`).
 #'
 #' @return A data table where each unique value in `freq_cols` has:
 #'   - All `freq_cols` with their unique values.
@@ -180,7 +180,7 @@ characterizeColumns <- function(data, cols) {
 #'   type = c("X", "Y", "X", "Y", "X"),
 #'   group = c(1, 2, 1, 2, 3)
 #' )
-#' col_types <- c("category" = "character", "type" = "character", "group" = "numeric")
+#' col_types <- c("category" = "string", "type" = "string", "group" = "numeric")
 #' result <- calculateFrequencies(df, c("category", "type", "group"), NULL, col_types)
 #' print(result)
 calculateFrequencies <- function(data, freq_cols, required_cols, col_types) {

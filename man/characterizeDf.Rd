@@ -29,7 +29,7 @@ df <- data.frame(
   col2 = c("A", "B", "C", "D")
 )
 meta_info <- list(
-  types = c("col1" = "numeric", "col2" = "character"),
+  types = c("col1" = "numeric", "col2" = "string"),
   freq_cols = c("col1", "col2"),
   required_cols = c("col1", "col3")
 )

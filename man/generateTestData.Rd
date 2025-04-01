@@ -4,7 +4,13 @@
 \alias{generateTestData}
 \title{Generate a synthetic dataset based on a frequency table}
 \usage{
-generateTestData(freq_table, n = NA, extraCols = list())
+generateTestData(
+  freq_table,
+  n = NA,
+  extraCols = list(),
+  countCol = NULL,
+  colOrder = NULL
+)
 }
 \arguments{
 \item{freq_table}{A data frame or data.table containing the frequency table.}

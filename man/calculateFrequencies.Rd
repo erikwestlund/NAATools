@@ -13,7 +13,7 @@ calculateFrequencies(data, freq_cols, required_cols, col_types)
 
 \item{required_cols}{A character vector of required columns that should exist in the data (missing ones are created as NA).}
 
-\item{col_types}{A named character vector specifying expected column types (e.g., `c("col1" = "numeric", "col2" = "character")`).}
+\item{col_types}{A named character vector specifying expected column types (e.g., `c("col1" = "numeric", "col2" = "string")`).}
 }
 \value{
 A data table where each unique value in `freq_cols` has:
@@ -31,7 +31,7 @@ df <- data.frame(
   type = c("X", "Y", "X", "Y", "X"),
   group = c(1, 2, 1, 2, 3)
 )
-col_types <- c("category" = "character", "type" = "character", "group" = "numeric")
+col_types <- c("category" = "string", "type" = "string", "group" = "numeric")
 result <- calculateFrequencies(df, c("category", "type", "group"), NULL, col_types)
 print(result)
 }
