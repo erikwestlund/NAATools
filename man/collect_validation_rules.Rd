@@ -11,10 +11,10 @@ collect_validation_rules(def)
 }
 \value{
 A list of validation rules, with each element containing:
-        - column: column name
-        - validator: validator name
-        - params: validator parameters
-        - context: validator context/message
+- column: column name
+- validator: validator name
+- params: validator parameters
+- context: validator context/message
 }
 \description{
 Collect all validation rules for a definition

@@ -1,25 +1,22 @@
 Package: NAATools
-Type: Package
-Title: NA-Accord Tools
-Version: 0.1.0
-Author: Erik Westlund
-Maintainer: Erik Westlund <ewestlund@jhu.edu>
-Description: This package provides tools to pull down, clean, and analyze data 
-  from the NA-Accord Depot. Includes support for data standardization through 
-  canonical value lookup tables, file summarization, synthetic data generation,
-  and metadata-driven file characterization.
-License: Proprietary
+Title: Internal Tools for NAA Data Processing
+Version: 0.0.0.9000
+Authors@R: 
+    person(given = "NAA",
+           role = c("aut", "cre"),
+           email = "naa@example.com")
+Description: Internal tools for NAA data processing and validation.
+License: MIT + file LICENSE
 Encoding: UTF-8
-LazyData: true
+Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
-Imports:
-  DBI,
-  data.table,
-  duckdb,
-  jsonlite,
-  purrr,
-  readr,
-  dplyr,
-  ggplot2,
-  RMariaDB,
-  tidyr
+Imports: 
+    DBI,
+    data.table,
+    duckdb,
+    jsonlite,
+    purrr,
+    readr
+Suggests: 
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3

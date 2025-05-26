@@ -13,12 +13,14 @@ characterize_columns(data, cols)
 }
 \value{
 A named list where each element (named after the column) contains:
-  - `unique_values`: Unique values in the column.
-  - `n_unique`: Number of unique values.
-  - `n_missing`: Number of missing (NA) values.
-  - `n_na`: Alias for `n_missing`, same value.
-  - `percent_numeric`: Percentage of values that are valid numerics.
-  - `percent_character`: Percentage of values that are valid characters.
+\itemize{
+\item \code{unique_values}: Unique values in the column.
+\item \code{n_unique}: Number of unique values.
+\item \code{n_missing}: Number of missing (NA) values.
+\item \code{n_na}: Alias for \code{n_missing}, same value.
+\item \code{percent_numeric}: Percentage of values that are valid numerics.
+\item \code{percent_character}: Percentage of values that are valid characters.
+}
 }
 \description{
 Analyzes the given columns in a data frame, computing unique values, count of unique values,

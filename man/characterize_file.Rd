@@ -13,12 +13,12 @@ characterize_file(file, meta)
 }
 \value{
 A list with two elements:
-  \item{meta}{A list containing metadata, including row count, column types, and characterizations.}
-  \item{freqs}{A data frame containing unique value combinations of specified columns with frequency counts and percentages.}
+\item{meta}{A list containing metadata, including row count, column types, and characterizations.}
+\item{freqs}{A data frame containing unique value combinations of specified columns with frequency counts and percentages.}
 }
 \description{
 Reads a CSV file and analyzes its metadata, column types, and frequency distributions
-by passing the data frame to `characterize_df()`.
+by passing the data frame to \code{characterize_df()}.
 }
 \examples{
 \dontrun{

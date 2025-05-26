@@ -13,13 +13,15 @@ calculate_frequencies(data, freq_cols, required_cols, col_types)
 
 \item{required_cols}{A character vector of required columns that should exist in the data (missing ones are created as NA).}
 
-\item{col_types}{A named character vector specifying expected column types (e.g., `c("col1" = "numeric", "col2" = "string")`).}
+\item{col_types}{A named character vector specifying expected column types (e.g., \code{c("col1" = "numeric", "col2" = "string")}).}
 }
 \value{
-A data table where each unique value in `freq_cols` has:
-  - All `freq_cols` with their unique values.
-  - `_n` (count of occurrences in the data).
-  - `_pct` (percentage of occurrences in the data).
+A data table where each unique value in \code{freq_cols} has:
+\itemize{
+\item All \code{freq_cols} with their unique values.
+\item \verb{_n} (count of occurrences in the data).
+\item \verb{_pct} (percentage of occurrences in the data).
+}
 }
 \description{
 Computes frequency counts and percentages for each unique value in the specified columns,

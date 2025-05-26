@@ -10,10 +10,10 @@ combine_csv_files(file_paths)
 \item{file_paths}{A character vector of file paths to CSV files.}
 }
 \value{
-A tibble containing all rows from the input files, with an additional `source_file` column
-        indicating the origin of each row.
+A tibble containing all rows from the input files, with an additional \code{source_file} column
+indicating the origin of each row.
 }
 \description{
-Reads multiple CSV files using `readr::read_csv()`, ensuring that column types
-default to character in case of type mismatches, and combines them using `dplyr::bind_rows()`.
+Reads multiple CSV files using \code{readr::read_csv()}, ensuring that column types
+default to character in case of type mismatches, and combines them using \code{dplyr::bind_rows()}.
 }

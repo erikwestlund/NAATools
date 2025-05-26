@@ -10,14 +10,16 @@ characterize_df(df, meta)
 \item{df}{A data frame to be analyzed.}
 
 \item{meta}{A list containing metadata details. Must include:
-- `types`: Expected column types.
-- `freq_cols`: Columns to compute frequency distributions.}
+\itemize{
+\item \code{types}: Expected column types.
+\item \code{freq_cols}: Columns to compute frequency distributions.
+}}
 }
 \value{
 A list with three elements:
-  \item{meta}{A list containing metadata, including row count and column types.}
-  \item{freqs}{A data frame containing unique value combinations of specified columns with frequency counts and percentages.}
-  \item{characterizations}{A list characterizing all columns, including unique counts, missing values, and validation percentages.}
+\item{meta}{A list containing metadata, including row count and column types.}
+\item{freqs}{A data frame containing unique value combinations of specified columns with frequency counts and percentages.}
+\item{characterizations}{A list characterizing all columns, including unique counts, missing values, and validation percentages.}
 }
 \description{
 Analyzes a data frame's metadata, column types, and frequency distributions.

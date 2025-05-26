@@ -7,10 +7,10 @@
 get_depot_connection(connection_details)
 }
 \arguments{
-\item{connection_details}{A list of database connection details, as returned by `get_depot_connection_details()`.}
+\item{connection_details}{A list of database connection details, as returned by \code{get_depot_connection_details()}.}
 }
 \value{
-A `DBIConnection` object that represents the database connection.
+A \code{DBIConnection} object that represents the database connection.
 }
 \description{
 This function establishes a database connection using the details provided.
