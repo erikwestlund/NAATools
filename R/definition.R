@@ -20,4 +20,13 @@ summarize_definition <- function(def) {
     description = sapply(def, function(var) if (!is.null(var$description)) var$description else NA),
     stringsAsFactors = FALSE
   )
+}
+
+#' Get a specific variable definition from a table definition
+#' @param table_definition The table definition list
+#' @param var_name The name of the variable to get
+#' @return The variable definition for the specified variable
+#' @export
+get_var_definition <- function(table_definition, var_name) {
+  table_definition[sapply(table_definition, function(x) x$name == var_name)][[1]]
 } 

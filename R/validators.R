@@ -95,4 +95,99 @@ summarize_validators <- function(def) {
   rows <- rows[!is.na(rows$validator) & rows$validator != "", ]
   rownames(rows) <- NULL
   rows
+}
+
+#' Get validators for a variable definition
+#'
+#' This function processes a variable definition and returns a list of validators that should be applied
+#' to validate the variable. It handles type-based validators, enum validators, boolean validators,
+#' explicit validators, and required field validation.
+#'
+#' @param var_definition list. A variable definition containing:
+#'   \itemize{
+#'     \item type: The data type (string, number, int, float, year, date, boolean)
+#'     \item allowed_values: Optional list of allowed values for enum/boolean validation
+#'     \item validators: Optional list of explicit validators to apply
+#'     \item value_optional: Optional boolean indicating if the field is optional
+#'     \item value_required: Optional boolean indicating if the field is required
+#'     \item date_format: Optional date format string (used with date type)
+#'   }
+#'
+#' @return A list of validators, where each validator is a list containing:
+#'   \itemize{
+#'     \item name: The name of the validator
+#'     \item params: Optional parameters for the validator
+#'   }
+#' @export
+get_var_validators <- function(var_definition) {
+  # Initialize empty list to store validators
+  validators <- list()
+
+  # Define type-specific validators for each supported data type
+  # Each validator is a list with a name and optional parameters
+  type_validators <- list(
+    "string" = list(name = "string", params = NULL),
+    "number" = list(name = "number", params = NULL),
+    "int" = list(name = "int", params = NULL),
+    "float" = list(name = "float", params = NULL),
+    "year" = list(name = "year", params = NULL),
+    "date" = list(name = "date", params = list(var_definition$date_format))
+  )
+
+  # Add type-specific validator if the variable has a supported type
+  if (var_definition$type %in% names(type_validators)) {
+    validators <- c(validators, list(type_validators[[var_definition$type]]))
+  }
+
+  # Add enum validator if the variable has allowed_values defined
+  # This ensures values are restricted to the specified set
+  if (!is.null(var_definition$allowed_values)) {
+    validators <- c(validators, list(list(
+      name = "enum_allowed_values",
+      params = var_definition$allowed_values
+    )))
+  }
+
+  # Add boolean validator if the variable is of type boolean and has allowed_values
+  # This is a special case for boolean fields that need specific value validation
+  if (!is.null(var_definition$allowed_values) && var_definition$type == "boolean") {
+    validators <- c(validators, list(list(
+      name = "boolean_allowed_values",
+      params = var_definition$allowed_values
+    )))
+  }
+
+  # Add any explicit validators specified in the variable definition
+  # These can be either simple strings or complex validator objects
+  if (!is.null(var_definition$validators)) {
+    for (validator in var_definition$validators) {
+      if (is.character(validator)) {
+        # Simple string validator (no parameters)
+        validators <- c(validators, list(list(
+          name = validator,
+          params = NULL
+        )))
+      } else {
+        # Complex validator object (with name and parameters)
+        validators <- c(validators, list(validator))
+      }
+    }
+  }
+
+  # Determine if the field is optional based on value_optional or value_required flags
+  is_optional <- isTRUE(var_definition$value_optional) ||
+    (isTRUE(!is.null(var_definition$value_required)) && !isTRUE(var_definition$value_required))
+
+  # Check if a required validator is already present
+  has_required_validator <- any(sapply(validators, function(v) v$name %in% c("required_when", "required")))
+
+  # Add required validator if the field is not optional and doesn't already have a required validator
+  if (!is_optional && !has_required_validator) {
+    validators <- c(validators, list(list(
+      name = "required",
+      params = TRUE
+    )))
+  }
+
+  validators
 } 
