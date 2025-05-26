@@ -127,27 +127,66 @@ create_invalid_catalog <- function(invalid_rows, max_rows = 1000) {
   
   # Add missing entries if present
   if (nrow(missing_rows) > 0) {
-    entries[["missing"]] <- list(
+    entries[[length(entries) + 1]] <- list(
+      type = "missing",
       invalid_value = "(Missing)",
-      count = nrow(missing_rows)
+      count = nrow(missing_rows),
+      row_ranges = format_row_ranges(missing_rows$row_no)
     )
   }
   
   # Add other invalid entries
   if (nrow(other_rows) > 0) {
-    other_catalog <- lapply(split(other_rows, other_rows$value), function(group) {
-      list(
-        invalid_value = group$value[1],
-        count = nrow(group)
+    for (value in unique(other_rows$value)) {
+      group <- other_rows[other_rows$value == value, ]
+      entries[[length(entries) + 1]] <- list(
+        type = "invalid",
+        invalid_value = value,
+        count = nrow(group),
+        row_ranges = format_row_ranges(group$row_no)
       )
-    })
-    entries <- c(entries, other_catalog)
+    }
   }
   
   list(
     message = message,
     entries = entries
   )
+}
+
+# Helper function to format row ranges
+format_row_ranges <- function(row_nos) {
+  if (length(row_nos) == 0) return("")
+  
+  # Sort row numbers
+  row_nos <- sort(row_nos)
+  
+  # Find consecutive ranges
+  ranges <- list()
+  start <- row_nos[1]
+  prev <- start
+  
+  for (i in 2:length(row_nos)) {
+    if (row_nos[i] != prev + 1) {
+      ranges[[length(ranges) + 1]] <- if (start == prev) {
+        as.character(start)
+      } else {
+        sprintf("%d-%d", start, prev)
+      }
+      start <- row_nos[i]
+    }
+    prev <- row_nos[i]
+  }
+  
+  # Add the last range
+  ranges[[length(ranges) + 1]] <- if (start == prev) {
+    as.character(start)
+  } else {
+    sprintf("%d-%d", start, prev)
+  }
+  
+  # Combine ranges with commas
+  paste(unlist(ranges), collapse = ", ")
 }
 
 #' Create a standardized validation result
