@@ -9,6 +9,7 @@
 #' @return A list containing:
 #'   - total_rows: Total number of rows in the table
 #'   - invalid_rows: Data frame of invalid rows (empty if all valid)
+#'   - invalid_catalog: Catalog of invalid values and their row numbers
 #'   - na_count: Number of NULL values
 #'   - empty_count: Number of empty string values (for string columns only)
 #'   - is_valid: Boolean indicating if all values are valid
@@ -28,79 +29,52 @@ validate_recommended <- function(duckdb_conn, table_name = "data", var, params) 
   col_type <- DBI::dbGetQuery(duckdb_conn, type_query)$type
   
   # Build query based on column type
-  if (grepl("VARCHAR|TEXT|CHAR", col_type, ignore.case = TRUE)) {
-    # For string columns, check both NULL and empty strings
-    query <- sprintf("
+  query <- if (grepl("VARCHAR|TEXT|CHAR", col_type, ignore.case = TRUE)) {
+    sprintf("
       SELECT row_no, %s as value
       FROM %s
       WHERE %s IS NULL OR TRIM(%s) = ''
     ", var, table_name, var, var)
   } else {
-    # For numeric columns, only check NULL
-    query <- sprintf("
+    sprintf("
       SELECT row_no, %s as value
       FROM %s
       WHERE %s IS NULL
     ", var, table_name, var)
   }
   
-  result <- DBI::dbGetQuery(duckdb_conn, query)
-  
-  # Check if we found any missing values
-  if (nrow(result) > 0) {
-    # Count NULL values
-    na_count <- sum(is.na(result$value))
-    
-    # Only count empty strings for string columns
-    empty_count <- if (grepl("VARCHAR|TEXT|CHAR", col_type, ignore.case = TRUE)) {
+  # Define helper functions
+  counts_fn <- function(result) {
+    na_count <- if (nrow(result) > 0) sum(is.na(result$value)) else 0
+    empty_count <- if (nrow(result) > 0 && grepl("VARCHAR|TEXT|CHAR", col_type, ignore.case = TRUE)) {
       sum(result$value == "", na.rm = TRUE)
     } else {
       0
     }
-    
-    counts <- list(
+    list(
       na_count = na_count,
       empty_count = empty_count
     )
-    
-    # Use custom message if provided, otherwise construct default message
-    message <- if (!is.null(params$message)) {
-      params$message
-    } else {
-      if (grepl("VARCHAR|TEXT|CHAR", col_type, ignore.case = TRUE)) {
-        sprintf("Recommended column '%s' has %d missing values (%d NULL, %d empty)", 
-                var, nrow(result), na_count, empty_count)
-      } else {
-        sprintf("Recommended column '%s' has %d NULL values", 
-                var, na_count)
-      }
-    }
-    
-    # Return warning result instead of error
-    return(list(
-      total_rows = total_rows,
-      invalid_rows = result,
-      counts = counts,
-      message = message,
-      is_valid = TRUE,  # Still valid since it's just a recommendation
-      status = "warn"
-    ))
   }
   
-  # All values are present
-  counts <- list(
-    na_count = 0,
-    empty_count = 0
-  )
+  message_fn <- function(result, counts, var) {
+    if (!is.null(params$message)) {
+      params$message
+    } else if (nrow(result) == 0) {
+      sprintf("All recommended values in column '%s' are present", var)
+    } else if (grepl("VARCHAR|TEXT|CHAR", col_type, ignore.case = TRUE)) {
+      sprintf("Recommended column '%s' has %d missing values (%d NULL, %d empty)", 
+              var, nrow(result), counts$na_count, counts$empty_count)
+    } else {
+      sprintf("Recommended column '%s' has %d NULL values", 
+              var, counts$na_count)
+    }
+  }
   
-  message <- sprintf("All recommended values in column '%s' are present", var)
+  status_fn <- function(result, counts) {
+    if (nrow(result) == 0) "success" else "warn"
+  }
   
-  return(list(
-    total_rows = total_rows,
-    invalid_rows = data.frame(),  # Empty data frame for no invalid rows
-    counts = counts,
-    message = message,
-    is_valid = TRUE,
-    status = "success"
-  ))
+  # Run validation
+  run_validation(duckdb_conn, query, var, counts_fn, message_fn, status_fn, total_rows)
 } 

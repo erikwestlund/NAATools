@@ -20,7 +20,7 @@ A list containing:
 \itemize{
 \item total_rows: Total number of rows in the table
 \item invalid_rows: Data frame of invalid rows (empty if all valid)
-\item na_count: Number of NULL values
+\item invalid_catalog: Catalog of invalid values and their row numbers
 \item non_string_count: Number of non-string values
 \item is_valid: Boolean indicating if all values are valid
 \item message: Description of validation result

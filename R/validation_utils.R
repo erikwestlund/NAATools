@@ -86,47 +86,68 @@ format_validation_message <- function(counts, var, prefix = "Found") {
 #' Create a catalog of invalid values
 #' 
 #' @param invalid_rows Data frame containing row_no and value columns
+#' @param max_rows Maximum number of rows to process (default: 1000)
 #' 
-#' @return A list where each element contains:
+#' @return A list containing:
 #'   \itemize{
-#'     \item invalid_value: The value that failed validation
-#'     \item row_nos: Vector of row numbers where this value appears
-#'     \item count: Number of times this value appears
+#'     \item message: Description of the catalog (including limit info if applicable)
+#'     \item entries: Array of invalid value entries, each containing:
+#'       \itemize{
+#'         \item invalid_value: The value that failed validation
+#'         \item count: Number of times this value appears
+#'       }
 #'   }
 #' @export
-create_invalid_catalog <- function(invalid_rows) {
+create_invalid_catalog <- function(invalid_rows, max_rows = 1000) {
   if (nrow(invalid_rows) == 0) {
-    return(list())
+    return(list(
+      message = "No invalid values found",
+      entries = list()
+    ))
   }
   
-  # Handle NA values separately
-  na_rows <- invalid_rows[is.na(invalid_rows$value), ]
-  non_na_rows <- invalid_rows[!is.na(invalid_rows$value), ]
+  # Create message about row limit if applicable
+  message <- if (nrow(invalid_rows) >= max_rows) {
+    sprintf("Showing first %d invalid rows out of %d total invalid rows", 
+            max_rows, nrow(invalid_rows))
+  } else {
+    sprintf("Found %d invalid rows", nrow(invalid_rows))
+  }
   
-  catalog <- list()
+  # Limit rows for catalog processing
+  if (nrow(invalid_rows) > max_rows) {
+    invalid_rows <- invalid_rows[1:max_rows, ]
+  }
   
-  # Add NA entries if present
-  if (nrow(na_rows) > 0) {
-    catalog[["NA"]] <- list(
-      invalid_value = NA,
-      row_nos = na_rows$row_no,
-      count = nrow(na_rows)
+  # Handle missing values (NULL or empty)
+  missing_rows <- invalid_rows[is.na(invalid_rows$value) | invalid_rows$value == "", ]
+  other_rows <- invalid_rows[!is.na(invalid_rows$value) & invalid_rows$value != "", ]
+  
+  entries <- list()
+  
+  # Add missing entries if present
+  if (nrow(missing_rows) > 0) {
+    entries[["missing"]] <- list(
+      invalid_value = "(Missing)",
+      count = nrow(missing_rows)
     )
   }
   
-  # Add non-NA entries
-  if (nrow(non_na_rows) > 0) {
-    non_na_catalog <- lapply(split(non_na_rows, non_na_rows$value), function(group) {
+  # Add other invalid entries
+  if (nrow(other_rows) > 0) {
+    other_catalog <- lapply(split(other_rows, other_rows$value), function(group) {
       list(
         invalid_value = group$value[1],
-        row_nos = group$row_no,
-        count = length(group$row_no)
+        count = nrow(group)
       )
     })
-    catalog <- c(catalog, non_na_catalog)
+    entries <- c(entries, other_catalog)
   }
   
-  catalog
+  list(
+    message = message,
+    entries = entries
+  )
 }
 
 #' Create a standardized validation result
@@ -226,5 +247,44 @@ calculate_validation_summary <- function(total_rows, invalid_rows, invalid_catal
       )
     }
   )
+}
+
+#' Run a validation query and process results
+#' 
+#' @param duckdb_conn DuckDB connection object
+#' @param query SQL query to run
+#' @param var Column name being validated
+#' @param counts_fn Function to calculate counts from results
+#' @param message_fn Function to generate message from results and counts
+#' @param status_fn Function to determine status from results
+#' @param total_rows Total number of rows in the table
+#' @param max_invalid_catalog_rows Maximum number of rows to include in the invalid catalog (default: 1000)
+#' 
+#' @return A standardized validation result
+#' @export
+run_validation <- function(duckdb_conn, query, var, counts_fn, message_fn, status_fn, total_rows, max_invalid_catalog_rows = 1000) {
+  # Run query and get results
+  result <- DBI::dbGetQuery(duckdb_conn, query)
+  
+  # Calculate counts using full result for accurate totals
+  counts <- counts_fn(result)
+  
+  # Create invalid catalog from limited rows
+  invalid_catalog <- create_invalid_catalog(result, max_rows = max_invalid_catalog_rows)
+  
+  # Create validation result
+  result <- create_validation_result(
+    total_rows = total_rows,
+    invalid_rows = result,  # Use full result for invalid_rows
+    counts = counts,
+    is_valid = nrow(result) == 0,  # Use full result for is_valid
+    message = message_fn(result, counts, var),  # Use full result for message
+    status = status_fn(result, counts)  # Use full result for status
+  )
+  
+  # Add invalid catalog to result
+  result$invalid_catalog <- invalid_catalog
+  
+  result
 }
 

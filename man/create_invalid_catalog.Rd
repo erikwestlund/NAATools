@@ -4,17 +4,22 @@
 \alias{create_invalid_catalog}
 \title{Create a catalog of invalid values}
 \usage{
-create_invalid_catalog(invalid_rows)
+create_invalid_catalog(invalid_rows, max_rows = 1000)
 }
 \arguments{
 \item{invalid_rows}{Data frame containing row_no and value columns}
+
+\item{max_rows}{Maximum number of rows to process (default: 1000)}
 }
 \value{
-A list where each element contains:
+A list containing:
+\itemize{
+\item message: Description of the catalog (including limit info if applicable)
+\item entries: Array of invalid value entries, each containing:
 \itemize{
 \item invalid_value: The value that failed validation
-\item row_nos: Vector of row numbers where this value appears
 \item count: Number of times this value appears
+}
 }
 }
 \description{
