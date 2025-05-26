@@ -7,7 +7,7 @@
 #'
 #' @param freq_table A data frame or data.table containing the frequency table.
 #' @param n The number of rows to generate (if NA, generates 1 row per unique frequency combo).
-#' @param extraCols A named list where each key is a column name to add and
+#' @param extra_cols A named list where each key is a column name to add and
 #'   the value is a vector of predefined values that will be recycled or sampled.
 #'
 #' @return A data.table with `n` rows based on the frequency table.
@@ -22,10 +22,10 @@
 #'   group = c(1, 2, 1)
 #' )
 #'
-#' test_data <- generateTestData(freq_table, n = 100)
+#' test_data <- generate_test_data(freq_table, n = 100)
 #' print(test_data)
-generateTestData <- function(freq_table, n = NA, extraCols = list(), countCol = NULL, colOrder = NULL) {
-  stopifnot(data.table::is.data.table(freq_table) || is.data.frame(freq_table), is.list(extraCols))
+generate_test_data <- function(freq_table, n = NA, extra_cols = list(), count_col = NULL, col_order = NULL) {
+  stopifnot(data.table::is.data.table(freq_table) || is.data.frame(freq_table), is.list(extra_cols))
 
   if (!data.table::is.data.table(freq_table)) {
     data.table::setDT(freq_table)
@@ -38,17 +38,17 @@ generateTestData <- function(freq_table, n = NA, extraCols = list(), countCol = 
     data.table::setnames(freq_table, "n", "count")
   }
 
-  # Auto-detect or validate countCol
-  if (is.null(countCol)) {
-    countCol <- intersect("count", names(freq_table))
-    if (length(countCol) == 0) countCol <- NULL
-  } else if (!countCol %in% names(freq_table)) {
-    stop(sprintf("countCol '%s' not found in freq_table", countCol))
+  # Auto-detect or validate count_col
+  if (is.null(count_col)) {
+    count_col <- intersect("count", names(freq_table))
+    if (length(count_col) == 0) count_col <- NULL
+  } else if (!count_col %in% names(freq_table)) {
+    stop(sprintf("count_col '%s' not found in freq_table", count_col))
   }
 
-  # Sort by frequency if countCol is present
-  if (!is.null(countCol)) {
-    data.table::setorderv(freq_table, cols = countCol, order = -1)
+  # Sort by frequency if count_col is present
+  if (!is.null(count_col)) {
+    data.table::setorderv(freq_table, cols = count_col, order = -1)
   }
 
   # Convert n safely
@@ -64,8 +64,8 @@ generateTestData <- function(freq_table, n = NA, extraCols = list(), countCol = 
   # Sampling
   if (is.na(n)) {
     sampled_data <- freq_table
-  } else if (!is.null(countCol)) {
-    weights <- freq_table[[countCol]]
+  } else if (!is.null(count_col)) {
+    weights <- freq_table[[count_col]]
     samples <- sample(seq_len(nrow(freq_table)), size = n, replace = TRUE, prob = weights)
     sampled_data <- freq_table[samples, ]
   } else if (n >= nrow(freq_table)) {
@@ -78,57 +78,57 @@ generateTestData <- function(freq_table, n = NA, extraCols = list(), countCol = 
 
   true_n <- nrow(sampled_data)
 
-  # Add extraCols
-  if (length(extraCols) > 0) {
-    for (colName in names(extraCols)) {
-      value <- extraCols[[colName]]
+  # Add extra_cols
+  if (length(extra_cols) > 0) {
+    for (col_name in names(extra_cols)) {
+      value <- extra_cols[[col_name]]
 
       # Special generator: ID as character
       if (is.character(value) && length(value) == 1 && value == "id") {
-        sampled_data[, (colName) := as.character(seq_len(true_n))]
+        sampled_data[, (col_name) := as.character(seq_len(true_n))]
         next
       }
 
       # Special generator: date
       if (is.list(value) && !is.null(value$type) && value$type == "date") {
-        minDate <- as.Date(value$minDate)
-        maxDate <- as.Date(value$maxDate)
-        if (is.na(minDate) || is.na(maxDate)) {
-          stop(sprintf("Invalid minDate or maxDate for column '%s'", colName))
+        min_date <- as.Date(value$min_date)
+        max_date <- as.Date(value$max_date)
+        if (is.na(min_date) || is.na(max_date)) {
+          stop(sprintf("Invalid min_date or max_date for column '%s'", col_name))
         }
-        if (maxDate < minDate) {
-          stop(sprintf("maxDate must be after minDate for column '%s'", colName))
+        if (max_date < min_date) {
+          stop(sprintf("max_date must be after min_date for column '%s'", col_name))
         }
-        nDays <- as.integer(maxDate - minDate)
-        dates <- minDate + sample.int(nDays + 1, size = true_n, replace = TRUE)
+        n_days <- as.integer(max_date - min_date)
+        dates <- min_date + sample.int(n_days + 1, size = true_n, replace = TRUE)
 
-        formatString <- value$format %||% "%Y-%m-%d"
-        sampled_data[, (colName) := format(dates, format = formatString)]
+        format_string <- value$format %||% "%Y-%m-%d"
+        sampled_data[, (col_name) := format(dates, format = format_string)]
         next
       }
 
       # Otherwise: vector value or literal
       if (is.list(value)) value <- unlist(value)
 
-      valueLength <- length(value)
-      if (valueLength == 1 || valueLength == true_n || (true_n %% valueLength == 0)) {
-        sampled_data[, (colName) := rep(value, length.out = true_n)]
+      value_length <- length(value)
+      if (value_length == 1 || value_length == true_n || (true_n %% value_length == 0)) {
+        sampled_data[, (col_name) := rep(value, length.out = true_n)]
       } else {
-        stop(sprintf("Length of extraCols[['%s']] (%d) cannot be recycled to match row count (%d)", colName, valueLength, true_n))
+        stop(sprintf("Length of extra_cols[['%s']] (%d) cannot be recycled to match row count (%d)", col_name, value_length, true_n))
       }
     }
   }
 
-  # Handle colOrder: enforce order, add missing columns, then bind extras
-  if (!is.null(colOrder)) {
-    missingCols <- setdiff(colOrder, names(sampled_data))
-    for (col in missingCols) {
+  # Handle col_order: enforce order, add missing columns, then bind extras
+  if (!is.null(col_order)) {
+    missing_cols <- setdiff(col_order, names(sampled_data))
+    for (col in missing_cols) {
       sampled_data[, (col) := rep("", true_n)]
     }
 
     # Ensure all requested columns come first, rest follow
-    finalCols <- c(colOrder, setdiff(names(sampled_data), colOrder))
-    sampled_data <- sampled_data[, ..finalCols]
+    final_cols <- c(col_order, setdiff(names(sampled_data), col_order))
+    sampled_data <- sampled_data[, ..final_cols]
   }
 
   # Remove count, pct columns

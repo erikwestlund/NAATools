@@ -8,7 +8,7 @@
 #' @importFrom duckdb duckdb
 #' @importFrom jsonlite toJSON fromJSON
 #' @export
-createLookupDb <- function(tables, save_location = NULL) {
+create_lookup_db <- function(tables, save_location = NULL) {
   con <- if (is.null(save_location)) {
     DBI::dbConnect(duckdb::duckdb())
   } else {
@@ -56,7 +56,7 @@ createLookupDb <- function(tables, save_location = NULL) {
 #'
 #' @return Invisibly returns NULL
 #' @export
-addToLookupTable <- function(db_path,
+add_to_lookup_table <- function(db_path,
                              table,
                              column,
                              value,

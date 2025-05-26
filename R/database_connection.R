@@ -12,13 +12,13 @@
 #' @export
 #'
 #' @examples
-#' connectionDetails <- getDepotConnectionDetails(
+#' connection_details <- get_depot_connection_details(
 #'   host = "localhost",
 #'   user = "myuser",
 #'   password = "mypassword",
 #'   dbname = "mydatabase"
 #' )
-getDepotConnectionDetails <- function(host, user, password, dbname, port = 3306) {
+get_depot_connection_details <- function(host, user, password, dbname, port = 3306) {
   list(
     driver = RMariaDB::MariaDB(),
     host = host,
@@ -33,29 +33,29 @@ getDepotConnectionDetails <- function(host, user, password, dbname, port = 3306)
 #'
 #' This function establishes a database connection using the details provided.
 #'
-#' @param connectionDetails A list of database connection details, as returned by `getDepotConnectionDetails()`.
+#' @param connection_details A list of database connection details, as returned by `get_depot_connection_details()`.
 #'
 #' @return A `DBIConnection` object that represents the database connection.
 #' @export
 #'
 #' @examples
 #' \dontrun{
-#' connectionDetails <- getDepotConnectionDetails(
+#' connection_details <- get_depot_connection_details(
 #'   host = "localhost",
 #'   user = "myuser",
 #'   password = "mypassword",
 #'   dbname = "mydatabase"
 #' )
-#' conn <- getDepotConnection(connectionDetails)
+#' conn <- get_depot_connection(connection_details)
 #' DBI::dbDisconnect(conn)
 #' }
-getDepotConnection <- function(connectionDetails) {
+get_depot_connection <- function(connection_details) {
   DBI::dbConnect(
-    drv = connectionDetails$driver,
-    host = connectionDetails$host,
-    user = connectionDetails$user,
-    password = connectionDetails$password,
-    dbname = connectionDetails$dbname,
-    port = connectionDetails$port
+    drv = connection_details$driver,
+    host = connection_details$host,
+    user = connection_details$user,
+    password = connection_details$password,
+    dbname = connection_details$dbname,
+    port = connection_details$port
   )
 }

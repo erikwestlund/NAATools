@@ -1,0 +1,76 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "R: Build Package",
+        "type": "shell",
+        "command": "R",
+        "args": [
+          "-e",
+          "devtools::build()"
+        ],
+        "options": {
+          "cwd": "${workspaceFolder}"
+        },
+        "group": {
+          "kind": "build",
+          "isDefault": true
+        },
+        "presentation": {
+          "reveal": "always",
+          "panel": "new"
+        }
+      },
+      {
+        "label": "R: Document Package",
+        "type": "shell",
+        "command": "R",
+        "args": [
+          "-e",
+          "devtools::document()"
+        ],
+        "options": {
+          "cwd": "${workspaceFolder}"
+        },
+        "group": "build",
+        "presentation": {
+          "reveal": "always",
+          "panel": "new"
+        }
+      },
+      {
+        "label": "R: Check Package",
+        "type": "shell",
+        "command": "R",
+        "args": [
+          "-e",
+          "devtools::check()"
+        ],
+        "options": {
+          "cwd": "${workspaceFolder}"
+        },
+        "group": "build",
+        "presentation": {
+          "reveal": "always",
+          "panel": "new"
+        }
+      },
+      {
+        "label": "R: Install Package",
+        "type": "shell",
+        "command": "R",
+        "args": [
+          "-e",
+          "devtools::install()"
+        ],
+        "options": {
+          "cwd": "${workspaceFolder}"
+        },
+        "group": "build",
+        "presentation": {
+          "reveal": "always",
+          "panel": "new"
+        }
+      }
+    ]
+  } 

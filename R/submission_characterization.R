@@ -1,6 +1,6 @@
 #' Characterize a Data Frame
 #'
-#' Analyzes a data frame’s metadata, column types, and frequency distributions.
+#' Analyzes a data frame's metadata, column types, and frequency distributions.
 #'
 #' @param df A data frame to be analyzed.
 #' @param meta A list containing metadata details. Must include:
@@ -24,12 +24,12 @@
 #'   freq_cols = c("col1", "col2"),
 #'   required_cols = c("col1", "col3")
 #' )
-#' result <- characterizeDf(df, meta_info)
+#' result <- characterize_df(df, meta_info)
 #' print(result$meta)
 #' print(result$freqs)
 #' print(result$characterizations)
 #' }
-characterizeDf <- function(df, meta) {
+characterize_df <- function(df, meta) {
   stopifnot(
     is.data.frame(df),
     is.list(meta),
@@ -39,12 +39,12 @@ characterizeDf <- function(df, meta) {
 
   meta_info <- list(
     count = nrow(df),
-    types = inferColumnTypes(df, meta$types)
+    types = infer_column_types(df, meta$types)
   )
 
-  freqs <- calculateFrequencies(df, meta$freq_cols, meta$required_cols %||% NULL, meta$types)
+  freqs <- calculate_frequencies(df, meta$freq_cols, meta$required_cols %||% NULL, meta$types)
 
-  characterizations <- characterizeColumns(df, colnames(df))
+  characterizations <- characterize_columns(df, colnames(df))
 
   list(meta = meta_info, freqs = freqs, characterizations = characterizations)
 }
@@ -53,7 +53,7 @@ characterizeDf <- function(df, meta) {
 #' Characterize a File
 #'
 #' Reads a CSV file and analyzes its metadata, column types, and frequency distributions
-#' by passing the data frame to `characterizeDf()`.
+#' by passing the data frame to `characterize_df()`.
 #'
 #' @param file A string specifying the path to the CSV file to be read.
 #' @param meta A list containing metadata details such as column types, required columns, and frequency analysis columns.
@@ -71,20 +71,20 @@ characterizeDf <- function(df, meta) {
 #'   char_cols = c("col2"),
 #'   freq_cols = c("col1", "col2")
 #' )
-#' result <- characterizeFile("data.csv", meta_info)
+#' result <- characterize_file("data.csv", meta_info)
 #' print(result$meta)
 #' print(result$freqs)
 #' }
-characterizeFile <- function(file, meta) {
+characterize_file <- function(file, meta) {
   stopifnot(is.character(file), file.exists(file))
 
   df <- readr::read_csv(file, show_col_types = FALSE)
-  characterizeDf(df, meta)
+  characterize_df(df, meta)
 }
 
 
 # Infer column types based on provided types and validate numeric columns
-inferColumnTypes <- function(data, expected_types) {
+infer_column_types <- function(data, expected_types) {
   inferred_types <- sapply(data, class)
 
   if (!is.null(expected_types)) {
@@ -126,9 +126,9 @@ inferColumnTypes <- function(data, expected_types) {
 #'   col2 = c("A", "B", "C", "D"),
 #'   col3 = c(1, 2, 3, NA)
 #' )
-#' result <- characterizeColumns(df, colnames(df))
+#' result <- characterize_columns(df, colnames(df))
 #' print(result$col1)
-characterizeColumns <- function(data, cols) {
+characterize_columns <- function(data, cols) {
   if (is.null(cols)) return(NULL)
 
   result <- lapply(cols, function(col) {
@@ -181,9 +181,9 @@ characterizeColumns <- function(data, cols) {
 #'   group = c(1, 2, 1, 2, 3)
 #' )
 #' col_types <- c("category" = "string", "type" = "string", "group" = "numeric")
-#' result <- calculateFrequencies(df, c("category", "type", "group"), NULL, col_types)
+#' result <- calculate_frequencies(df, c("category", "type", "group"), NULL, col_types)
 #' print(result)
-calculateFrequencies <- function(data, freq_cols, required_cols, col_types) {
+calculate_frequencies <- function(data, freq_cols, required_cols, col_types) {
   stopifnot(
     is.data.frame(data),
     is.character(freq_cols),
