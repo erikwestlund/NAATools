@@ -23,7 +23,7 @@ load_file_summary <- function(file_path) {
 #' in JSON format.
 #'
 #' @param file_path The path to the JSON file to read. Can be a full path or relative path.
-#' @param simplifyVector Logical. If TRUE, JSON arrays are converted to R vectors. If FALSE,
+#' @param simplify_vector Logical. If TRUE, JSON arrays are converted to R vectors. If FALSE,
 #'   they are converted to lists. Defaults to FALSE to preserve the original structure.
 #' @return The parsed JSON content as an R object (typically a list).
 #' @export
@@ -33,11 +33,11 @@ load_file_summary <- function(file_path) {
 #' def <- read_definition("path/to/definition.json")
 #' 
 #' # Read with vector simplification
-#' def <- read_definition("path/to/definition.json", simplifyVector = TRUE)
+#' def <- read_definition("path/to/definition.json", simplify_vector = TRUE)
 #' }
-read_definition <- function(file_path, simplifyVector = FALSE) {
+read_definition <- function(file_path, simplify_vector = FALSE) {
   if (!file.exists(file_path)) {
     stop(sprintf("Definition file not found at: %s", file_path))
   }
-  jsonlite::fromJSON(file_path, simplifyVector = simplifyVector)
+  jsonlite::fromJSON(file_path, simplifyVector = simplify_vector)
 }

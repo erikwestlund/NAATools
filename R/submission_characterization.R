@@ -163,7 +163,7 @@ characterize_columns <- function(data, cols) {
 #' ensuring that the columns match the specified types.
 #'
 #' @param data A data frame.
-#' @param freq_cols A character vector specifying which columns to analyze.
+#' @param freq_cols A character vector specifying which columns to analyze. If NULL or empty, returns total count only.
 #' @param required_cols A character vector of required columns that should exist in the data (missing ones are created as NA).
 #' @param col_types A named character vector specifying expected column types (e.g., `c("col1" = "numeric", "col2" = "string")`).
 #'
@@ -171,6 +171,7 @@ characterize_columns <- function(data, cols) {
 #'   - All `freq_cols` with their unique values.
 #'   - `_n` (count of occurrences in the data).
 #'   - `_pct` (percentage of occurrences in the data).
+#'   If no freq_cols are provided, returns a single row with total count and 100% percentage.
 #' @importFrom data.table setDT .N
 #' @export
 #'
@@ -186,8 +187,7 @@ characterize_columns <- function(data, cols) {
 calculate_frequencies <- function(data, freq_cols, required_cols, col_types) {
   stopifnot(
     is.data.frame(data),
-    is.character(freq_cols),
-    length(freq_cols) > 0,
+    is.null(freq_cols) || (is.character(freq_cols) && length(freq_cols) > 0),
     is.null(col_types) || is.list(col_types) || is.character(col_types)
   )
 
@@ -212,6 +212,14 @@ calculate_frequencies <- function(data, freq_cols, required_cols, col_types) {
   }
 
   total_rows <- nrow(data)
+
+  # If no freq_cols provided, return total count only
+  if (is.null(freq_cols) || length(freq_cols) == 0) {
+    return(data.table::data.table(
+      count = total_rows,
+      pct = 100
+    ))
+  }
 
   # Compute frequencies
   result <- data[, .(count = .N), by = freq_cols][, pct := count / total_rows * 100]
