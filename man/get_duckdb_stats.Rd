@@ -16,6 +16,7 @@ A list containing:
 \item{row_count}{Total number of rows}
 \item{column_types}{Data frame with column type information}
 \item{column_stats}{Data frame with column statistics}
+\item{file_size}{Size of the DuckDB file in bytes}
 }
 \description{
 Get database statistics from a DuckDB file

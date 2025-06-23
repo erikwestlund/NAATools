@@ -4,7 +4,7 @@
 \alias{summarize_barchart}
 \title{Summarize variable values as a bar chart}
 \usage{
-summarize_barchart(duckdb_conn, table_name, var, params = NULL)
+summarize_barchart(duckdb_conn, table_name = "data", var, params = NULL)
 }
 \arguments{
 \item{duckdb_conn}{DuckDB connection}
