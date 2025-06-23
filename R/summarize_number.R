@@ -7,20 +7,20 @@
 #' @export
 summarize_number <- function(duckdb_conn, table_name, var, params = NULL) {
   # Check if variable exists and is numeric
-  column_query <- sprintf("
-    SELECT name, type 
-    FROM pragma_table_info('%s') 
-    WHERE name = '%s'
-  ", table_name, var)
-  
-  column_info <- DBI::dbGetQuery(duckdb_conn, column_query)
-  
-  if (nrow(column_info) == 0) {
+  if (!NAATools::column_exists(duckdb_conn, table_name, var)) {
     return(list(
       status = "error",
       message = sprintf("Column '%s' not found in table", var)
     ))
   }
+  
+  # Get column type
+  type_query <- sprintf("
+    SELECT type 
+    FROM pragma_table_info('%s') 
+    WHERE name = '%s'
+  ", table_name, var)
+  col_type <- DBI::dbGetQuery(duckdb_conn, type_query)$type
   
   # Get basic statistics
   stats_query <- sprintf("

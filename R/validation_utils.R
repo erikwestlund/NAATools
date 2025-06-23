@@ -158,35 +158,13 @@ create_invalid_catalog <- function(invalid_rows, max_rows = 1000) {
 format_row_ranges <- function(row_nos) {
   if (length(row_nos) == 0) return("")
   
-  # Sort row numbers
-  row_nos <- sort(row_nos)
+  # Convert to character, handling NA values
+  formatted <- sapply(row_nos, function(x) {
+    if (is.na(x)) "NA" else as.character(x)
+  })
   
-  # Find consecutive ranges
-  ranges <- list()
-  start <- row_nos[1]
-  prev <- start
-  
-  for (i in 2:length(row_nos)) {
-    if (row_nos[i] != prev + 1) {
-      ranges[[length(ranges) + 1]] <- if (start == prev) {
-        as.character(start)
-      } else {
-        sprintf("%d-%d", start, prev)
-      }
-      start <- row_nos[i]
-    }
-    prev <- row_nos[i]
-  }
-  
-  # Add the last range
-  ranges[[length(ranges) + 1]] <- if (start == prev) {
-    as.character(start)
-  } else {
-    sprintf("%d-%d", start, prev)
-  }
-  
-  # Combine ranges with commas
-  paste(unlist(ranges), collapse = ", ")
+  # Join with commas
+  paste(formatted, collapse = ", ")
 }
 
 #' Create a standardized validation result

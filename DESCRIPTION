@@ -1,22 +1,19 @@
 Package: NAATools
-Title: Internal Tools for NAA Data Processing
+Title: Tools for NAA Data Analysis
 Version: 0.0.0.9000
 Authors@R: 
-    person(given = "NAA",
-           role = c("aut", "cre"),
-           email = "naa@example.com")
-Description: Internal tools for NAA data processing and validation.
+    person("Erik", "Westlund", , "erik.westlund@naa.org", role = c("aut", "cre"))
+Description: A collection of tools for analyzing NAA data.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.2
+RoxygenNote: 7.2.3
 Imports: 
     DBI,
-    data.table,
     duckdb,
-    jsonlite,
-    purrr,
-    readr
+    ggplot2,
+    plotly,
+    stats
 Suggests: 
     testthat (>= 3.0.0)
 Config/testthat/edition: 3

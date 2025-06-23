@@ -18,6 +18,20 @@ close_duckdb_connection <- function(con) {
   DBI::dbDisconnect(con, shutdown = TRUE)
 }
 
+#' Check if a column exists in a DuckDB table
+#' @param duckdb_conn DuckDB connection object
+#' @param table_name Name of the table to check
+#' @param column_name Name of the column to check
+#' @return Boolean indicating if the column exists
+#' @export
+column_exists <- function(duckdb_conn, table_name, column_name) {
+  column_query <- sprintf("
+    SELECT name 
+    FROM pragma_table_info('%s') 
+    WHERE name = '%s'
+  ", table_name, column_name)
+  nrow(DBI::dbGetQuery(duckdb_conn, column_query)) > 0
+}
 
 #' Get database statistics from a DuckDB file
 #'
@@ -27,6 +41,7 @@ close_duckdb_connection <- function(con) {
 #'   \item{row_count}{Total number of rows}
 #'   \item{column_types}{Data frame with column type information}
 #'   \item{column_stats}{Data frame with column statistics}
+#'   \item{file_size}{Size of the DuckDB file in bytes}
 #' @export
 get_duckdb_stats <- function(data_file_path, table_name = "data") {
   con <- open_duckdb_connection(data_file_path)
@@ -60,10 +75,14 @@ get_duckdb_stats <- function(data_file_path, table_name = "data") {
     row.names = NULL
   )
   
+  # Get file size
+  file_size <- file.size(data_file_path)
+  
   list(
     row_count = row_count,
     column_types = column_types,
-    column_stats = column_stats
+    column_stats = column_stats,
+    file_size = file_size
   )
 } 
 

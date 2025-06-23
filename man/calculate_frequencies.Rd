@@ -9,7 +9,7 @@ calculate_frequencies(data, freq_cols, required_cols, col_types)
 \arguments{
 \item{data}{A data frame.}
 
-\item{freq_cols}{A character vector specifying which columns to analyze.}
+\item{freq_cols}{A character vector specifying which columns to analyze. If NULL or empty, returns total count only.}
 
 \item{required_cols}{A character vector of required columns that should exist in the data (missing ones are created as NA).}
 
@@ -21,6 +21,7 @@ A data table where each unique value in \code{freq_cols} has:
 \item All \code{freq_cols} with their unique values.
 \item \verb{_n} (count of occurrences in the data).
 \item \verb{_pct} (percentage of occurrences in the data).
+If no freq_cols are provided, returns a single row with total count and 100\% percentage.
 }
 }
 \description{

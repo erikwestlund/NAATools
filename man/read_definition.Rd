@@ -13,7 +13,7 @@ read_definition(path)
 
 \item{file_path}{The path to the JSON file to read. Can be a full path or relative path.}
 
-\item{simplifyVector}{Logical. If TRUE, JSON arrays are converted to R vectors. If FALSE,
+\item{simplify_vector}{Logical. If TRUE, JSON arrays are converted to R vectors. If FALSE,
 they are converted to lists. Defaults to FALSE to preserve the original structure.}
 }
 \value{
@@ -32,6 +32,6 @@ in JSON format.
 def <- read_definition("path/to/definition.json")
 
 # Read with vector simplification
-def <- read_definition("path/to/definition.json", simplifyVector = TRUE)
+def <- read_definition("path/to/definition.json", simplify_vector = TRUE)
 }
 }
