@@ -22,17 +22,17 @@ summarize_number <- function(duckdb_conn, table_name, var, params = NULL) {
   ", table_name, var)
   col_type <- DBI::dbGetQuery(duckdb_conn, type_query)$type
   
-  # Get basic statistics
+  # Get basic statistics - use TRY_CAST to handle string columns containing numeric values
   stats_query <- sprintf("
     SELECT 
       COUNT(*) as count,
       COUNT(DISTINCT %s) as unique_count,
       COUNT(*) FILTER (WHERE %s IS NULL) as null_count,
-      MIN(%s) as min_val,
-      MAX(%s) as max_val,
-      AVG(%s) as mean_val,
-      PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY %s) as median_val,
-      STDDEV(%s) as std_dev
+      MIN(TRY_CAST(%s AS DOUBLE)) as min_val,
+      MAX(TRY_CAST(%s AS DOUBLE)) as max_val,
+      AVG(TRY_CAST(%s AS DOUBLE)) as mean_val,
+      PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY TRY_CAST(%s AS DOUBLE)) as median_val,
+      STDDEV(TRY_CAST(%s AS DOUBLE)) as std_dev
     FROM %s
   ", var, var, var, var, var, var, var, table_name)
   
@@ -45,18 +45,20 @@ summarize_number <- function(duckdb_conn, table_name, var, params = NULL) {
   outliers_query <- sprintf("
     WITH stats AS (
       SELECT 
-        AVG(%s) as mean_val,
-        STDDEV(%s) as std_dev
+        AVG(TRY_CAST(%s AS DOUBLE)) as mean_val,
+        STDDEV(TRY_CAST(%s AS DOUBLE)) as std_dev
       FROM %s
       WHERE %s IS NOT NULL
+        AND TRY_CAST(%s AS DOUBLE) IS NOT NULL
     )
-    SELECT %s as value
+    SELECT TRY_CAST(%s AS DOUBLE) as value
     FROM %s, stats
     WHERE %s IS NOT NULL
-    AND (%s < mean_val - 3 * std_dev OR %s > mean_val + 3 * std_dev)
-    ORDER BY %s
+      AND TRY_CAST(%s AS DOUBLE) IS NOT NULL
+      AND (TRY_CAST(%s AS DOUBLE) < mean_val - 3 * std_dev OR TRY_CAST(%s AS DOUBLE) > mean_val + 3 * std_dev)
+    ORDER BY TRY_CAST(%s AS DOUBLE)
     LIMIT 10
-  ", var, var, table_name, var, var, table_name, var, var, var, var)
+  ", var, var, table_name, var, var, var, table_name, var, var, var, var, var)
   
   outliers <- DBI::dbGetQuery(duckdb_conn, outliers_query)
   

@@ -30,30 +30,57 @@ validate_required_when <- function(duckdb_conn, table_name = "data", var, params
   
   # Build validation query based on condition type
   if (!is.null(absent)) {
-    # Value is required when 'absent' column is NULL or empty
-    query <- sprintf("
-      SELECT row_no, 
-             CAST(%s AS VARCHAR) as value,
-             CAST(%s AS VARCHAR) as condition_value
-      FROM %s
-      WHERE (%s IS NULL OR CAST(%s AS VARCHAR) = '')  -- Condition column is absent/empty
-        AND (%s IS NULL OR CAST(%s AS VARCHAR) = '')  -- But target column is also empty
-      ORDER BY row_no
-    ", var, absent, table_name, absent, absent, var, var)
+    # Check if the condition column exists
+    if (!column_exists(duckdb_conn, table_name, absent)) {
+      # If condition column doesn't exist, that means it's always "absent"
+      # So we need to check if the target column is always present
+      query <- sprintf("
+        SELECT row_no, 
+               CAST(%s AS VARCHAR) as value,
+               '' as condition_value
+        FROM %s
+        WHERE (%s IS NULL OR CAST(%s AS VARCHAR) = '')  -- Target column is empty
+        ORDER BY row_no
+      ", var, table_name, var, var)
+    } else {
+      # Value is required when 'absent' column is NULL or empty
+      query <- sprintf("
+        SELECT row_no, 
+               CAST(%s AS VARCHAR) as value,
+               CAST(%s AS VARCHAR) as condition_value
+        FROM %s
+        WHERE (%s IS NULL OR CAST(%s AS VARCHAR) = '')  -- Condition column is absent/empty
+          AND (%s IS NULL OR CAST(%s AS VARCHAR) = '')  -- But target column is also empty
+        ORDER BY row_no
+      ", var, absent, table_name, absent, absent, var, var)
+    }
     
     condition_desc <- sprintf("when '%s' is absent", absent)
   } else {
-    # Value is required when 'present' column is NOT NULL and NOT empty
-    query <- sprintf("
-      SELECT row_no, 
-             CAST(%s AS VARCHAR) as value,
-             CAST(%s AS VARCHAR) as condition_value
-      FROM %s
-      WHERE %s IS NOT NULL 
-        AND CAST(%s AS VARCHAR) != ''  -- Condition column is present
-        AND (%s IS NULL OR CAST(%s AS VARCHAR) = '')  -- But target column is empty
-      ORDER BY row_no
-    ", var, present, table_name, present, present, var, var)
+    # Check if the condition column exists
+    if (!column_exists(duckdb_conn, table_name, present)) {
+      # If condition column doesn't exist, it's never "present"
+      # So this validation always passes (no rows will violate the condition)
+      query <- sprintf("
+        SELECT row_no, 
+               CAST(%s AS VARCHAR) as value,
+               '' as condition_value
+        FROM %s
+        WHERE 1 = 0  -- Always false, no violations possible
+      ", var, table_name)
+    } else {
+      # Value is required when 'present' column is NOT NULL and NOT empty
+      query <- sprintf("
+        SELECT row_no, 
+               CAST(%s AS VARCHAR) as value,
+               CAST(%s AS VARCHAR) as condition_value
+        FROM %s
+        WHERE %s IS NOT NULL 
+          AND CAST(%s AS VARCHAR) != ''  -- Condition column is present
+          AND (%s IS NULL OR CAST(%s AS VARCHAR) = '')  -- But target column is empty
+        ORDER BY row_no
+      ", var, present, table_name, present, present, var, var)
+    }
     
     condition_desc <- sprintf("when '%s' is present", present)
   }

@@ -107,6 +107,31 @@ generate_test_data <- function(freq_table, n = NA, extra_cols = list(), count_co
         next
       }
 
+      # Special generator: year
+      if (is.list(value) && !is.null(value$type) && value$type == "year") {
+        current_year <- as.integer(format(Sys.Date(), "%Y"))
+        
+        # Use provided min/max or default to current year - 50 to current year
+        if (!is.null(value$min_year) && !is.null(value$max_year)) {
+          min_year <- as.integer(value$min_year)
+          max_year <- as.integer(value$max_year)
+        } else {
+          min_year <- current_year - 50
+          max_year <- current_year
+        }
+        
+        if (is.na(min_year) || is.na(max_year)) {
+          stop(sprintf("Invalid min_year or max_year for column '%s'", col_name))
+        }
+        if (max_year < min_year) {
+          stop(sprintf("max_year must be after min_year for column '%s'", col_name))
+        }
+        
+        years <- sample(min_year:max_year, size = true_n, replace = TRUE)
+        sampled_data[, (col_name) := years]
+        next
+      }
+
       # Otherwise: vector value or literal
       if (is.list(value)) value <- unlist(value)
 
