@@ -30,13 +30,13 @@ validate_required <- function(duckdb_conn, table_name = "data", var, params) {
   # Build query based on column type
   query <- if (grepl("VARCHAR|TEXT|CHAR", col_type, ignore.case = TRUE)) {
     sprintf("
-      SELECT COALESCE(row_no, 0) as row_no, %s as value
+      SELECT COALESCE(CAST(row_no AS INTEGER), 0) as row_no, %s as value
       FROM %s
       WHERE %s IS NULL OR TRIM(%s) = ''
     ", var, table_name, var, var)
   } else {
     sprintf("
-      SELECT COALESCE(row_no, 0) as row_no, %s as value
+      SELECT COALESCE(CAST(row_no AS INTEGER), 0) as row_no, %s as value
       FROM %s
       WHERE %s IS NULL
     ", var, table_name, var)
